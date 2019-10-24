@@ -80,7 +80,7 @@ combinedYrs <-  merge(x=combinedYrs, y=Yr1data, all=T)
 rownames(combinedYrs) <- combinedYrs$Label
 
 # write.csv(mergeDataYr3, file = "../mergeData_freqParent.csv")   # year 3 only
-# write.csv(mergeData, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_freqParent_allyrs.csv")  # all years combined
+# write.csv(combinedYrs, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_freqParent_allyrs.csv")  # all years combined
 
 
 setwd(a) 
@@ -93,43 +93,61 @@ setwd(a)
 a <- getwd()
 setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/Analysis/FreqParent")
 files <-   list.files("./", pattern=').csv$', full=F)
-mergeData <- read.csv(file = "FreqParent.csv", stringsAsFactors = F, header = T, row.names = 1)
-mergeData$Batch = "0"
+mergeDataYr3 <- read.csv(file = "FreqParent.csv", stringsAsFactors = F, header = T, row.names = 1)
+mergeDataYr3$Batch = "0"
 
 for (i in 1:length(files))
 {
   temp <- read.csv(files[i], stringsAsFactors = F, header=T, row.names=1)
   temp$Batch = i
-  mergeData <- rbind(mergeData, temp)
+  mergeDataYr3 <- rbind(mergeDataYr3, temp)
 }
 
-mergeData <- mergeData[-grep(pattern="Mean", rownames(mergeData)),]
-mergeData <- mergeData[-grep(pattern="SD", rownames(mergeData)),]
-mergeData <- mergeData[,-which(colnames(mergeData) == "X.1")]
+# *************************************************************************
+# incomplete, need to rationally extract B cell data from year 2 and year 1
+# *************************************************************************
 
-temp <- rownames(mergeData); temp <- str_replace(temp, "PBMCs_", ""); temp <- substr(temp, 1, nchar(temp)-8)   # clean up rownames a bit
-rownames(mergeData) <- temp
-# add columns for Cohort, Subject, TimePoint (numeric), TimeCategory (categorical), and Year
-mergeData$Label <- rownames(mergeData)
-mergeData$Subject <- word(mergeData$Label,1,sep = "\\_")  # take first chunk prior to _ character
-mergeData$Cohort <- 0;  
-mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "19")] <- "aPD1";  
-mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "FS")] <- "Healthy"; 
-mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "20")] <- "nonPD1"
-mergeData$TimePoint <- as.numeric(word(mergeData$Label,2,sep= "d"))  # parse out the number of days since vaccination
-mergeData$TimeCategory[which(mergeData$TimePoint == 0)] <- "baseline";  
-mergeData$TimeCategory[which(mergeData$TimePoint > 0 & mergeData$TimePoint <= 14)] <- "oneWeek"; 
-mergeData$TimeCategory[which(mergeData$TimePoint > 14)] <- "late"
-mergeData$Year <- 3
 
-temp <- colnames(mergeData)
-temp <- str_replace(temp,"Freq..of.Parent....", "FreqParent")
-temp <- str_replace(temp,"Lymphocytes.Singlets.Live.CD14.CD4..CD19..", "CD19hi_")
-temp <- str_replace(temp,"Lymphocytes.Singlets.Live.CD4..CD3..", "CD4hi_")
-colnames(mergeData) <- temp
+cleanColumnNames <- function (mergeData)
+{
+  mergeData <- mergeData[-grep(pattern="Mean", rownames(mergeData)),]
+  mergeData <- mergeData[-grep(pattern="SD", rownames(mergeData)),]
+  mergeData <- mergeData[,-which(colnames(mergeData) == "X.1")]
+  
+  temp <- rownames(mergeData); temp <- str_replace(temp, "PBMCs_", ""); 
+  temp <- substr(temp, 1, nchar(temp)-8)   # clean up rownames a bit
+  rownames(mergeData) <- temp
+  # add columns for Cohort, Subject, TimePoint (numeric), TimeCategory (categorical), and Year
+  mergeData$Label <- rownames(mergeData)
+  mergeData$Subject <- word(mergeData$Label,1,sep = "\\_")  # take first chunk prior to _ character
+  mergeData$Cohort <- 0;  
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "19")] <- "aPD1";  
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "FS")] <- "Healthy"; 
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "20")] <- "nonPD1"
+  mergeData$TimePoint <- as.numeric(word(mergeData$Label,2,sep= "d"))  # parse out the number of days since vaccination
+  mergeData$TimeCategory[which(mergeData$TimePoint == 0)] <- "baseline";  
+  mergeData$TimeCategory[which(mergeData$TimePoint > 0 & mergeData$TimePoint <= 14)] <- "oneWeek"; 
+  mergeData$TimeCategory[which(mergeData$TimePoint > 14)] <- "late"
+  
+  
+  temp <- colnames(mergeData)
+  temp <- str_replace(temp,"Freq..of.Parent....", "FreqParent")
+  temp <- str_replace(temp,"Lymphocytes.Singlets.Live.CD14.CD4..CD19..", "CD19hi_")
+  temp <- str_replace(temp,"Lymphocytes.Singlets.Live.CD4..CD3..", "CD4hi_")
+  temp <- str_replace(temp,"CD19hi_NonnaiveB...FreqParent", "CD19hi_NotNaiveB_freqParent")
+  temp <- str_replace(temp,"CD19hi_NonnaiveB.", "")
+  temp <- str_replace(temp,"IgD.CD71..", "IgDlo_CD71hi_")
+  temp <- str_replace(temp,"CD27.CD38..", "CD27hiCD38hi_")
+  colnames(mergeData) <- temp
+  return (mergeData)
+}
+Yr3data <- cleanColumnNames(mergeDataYr3);  Yr3data$Year <- 3
 
-# write.csv(mergeData, file = "../mergeData_freqParent.csv")
-# write.csv(mergeData, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_freqParent.csv")
+# combinedYrs <- merge(x=Yr3data, y=Yr2data, all=T)
+
+
+write.csv(Yr3data, file = "../mergeData_freqParent.csv")   # year 3 only
+write.csv(Yr3data, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_freqParent_allyrs.csv")    # all years combined
 
 setwd(a) 
 

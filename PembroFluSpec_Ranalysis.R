@@ -9,120 +9,6 @@ library("gridExtra")
 library("RColorBrewer")
 library("scales")
 library("MASS")
-library("Rlabkey")
-labkey.setDefaults(apiKey="apikey|2280ef3ab44cc0f3e090af59e71c2df2")
-
-labkey.data <- labkey.selectRows(
-  baseUrl="http://localhost:8080/labkey", 
-  folderPath="/PembroFluVac", 
-  schemaName="study", 
-  queryName="allStudyVisits", 
-  viewName="allDataMerged", 
-  colFilter=NULL, 
-  containerFilter=NULL
-)
-
-
-# data to exclude: 
-# Cohort:  nonPD1
-# samples:  Tpanel 1718:  PBMC_19616-007_d7_002.fcs
-
-finalDataset <- labkey.data
-# finalDataset <- subset(labkey.data, !(`Cohort`=="nonPD1"))
-# finalDataset <- finalDataset[-which(finalDataset$`Participant ID` == "19616-007" & finalDataset$Year==2 & finalDataset$`Time Category`=="oneWeek"),]
-finalDataset$`Time Category` <- factor(finalDataset$`Time Category`, levels=c("baseline","oneWeek","late"))
-allD7 <- subset(finalDataset, `Time Category` == "oneWeek")
-Yr2data <- subset(finalDataset, `Year`==2)
-Yr2D0 <- subset(Yr2data, `Time Category`=="baseline")
-Yr2D7 <- subset(Yr2data,  `Time Category` == "oneWeek")
-Yr3data <- subset(finalDataset, `Year`==3)
-Yr3D7 <- subset(Yr3data,  `Time Category` == "oneWeek")
-
-Yr2D0D7 <- subset(Yr2data, `Time Category` == "baseline" | `Time Category` == "oneWeek"); Yr2D0D7 <- Yr2D0D7[order(Yr2D0D7$`Participant ID`),]
-
-
-
-
-###################################################################################################### --------------- Alld7 ICOS+CD38+ by Cohort ----------------
-temp <- allD7[-which(allD7$`Participant ID` == "19616-007" & allD7$Year==2),]
-fit <- lm(temp$`ICOS+CD38+ c Tfh Freq`~temp$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-ggplot(data=temp, aes(x=`Cohort`, y=`ICOS+CD38+ c Tfh Freq`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("All years day 7: cTfh responses") + ylab("ICOS+CD38+ cTfh freq at d7") + scale_y_continuous(breaks=seq(1:16), limits=c(1,16)) +  
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/cTfhresponses_allD7.pdf")
-
-###################################################################################################### --------------- Alld7 plasmablast by Cohort ----------------
-temp <- allD7[-which(allD7$`Participant ID` == "19616-007" & temp$Year==2),]
-fit <- lm(temp$`CD19+/CD27+CD38+ Freq`~temp$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-ggplot(data=temp, aes(x=`Cohort`, y=`CD19+/CD27+CD38+ Freq`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("All years day 7: Plasmablast responses") + ylab("Plasmablast freq at d7") + scale_y_continuous(breaks=seq(1:5), limits=c(0,5)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/Plasmablastresponses_allD7.pdf")
-
-###################################################################################################### --------------- Yr2D0 CXCL13 by Cohort ----------------
-mean(Yr2D0$`Plasma CXCL13 (pg/m L)`, na.rm = T)+3*sd(Yr2D0$`Plasma CXCL13 (pg/m L)`, na.rm = T)               # one outlier, FS1718-120 d7 is >3sd away so will exclude
-temp <- Yr2D0[-which(Yr2D0$`Plasma CXCL13 (pg/m L)`== max(Yr2D0$`Plasma CXCL13 (pg/m L)`, na.rm = T)),]
-fit <- lm(temp$`Plasma CXCL13 (pg/m L)`~temp$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-ggplot(data=temp, aes(x=`Cohort`, y=`Plasma CXCL13 (pg/m L)`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("Plasma CXCL13 at day 0") + ylab("CXCL13 (pg/mL)") + # scale_y_continuous(breaks=seq(1:5), limits=c(0,5)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/CXCL13plasma_Yr2D0.pdf")
-
-###################################################################################################### --------------- Alld7 CXCL13 by Cohort ----------------
-mean(allD7$`Plasma CXCL13 (pg/m L)`, na.rm = T)+3*sd(allD7$`Plasma CXCL13 (pg/m L)`, na.rm = T)               # one outlier, FS1718-120 d7 is >3sd away so will exclude
-temp <- allD7[-which(allD7$`Plasma CXCL13 (pg/m L)`== max(allD7$`Plasma CXCL13 (pg/m L)`, na.rm = T)),]
-fit <- lm(temp$`Plasma CXCL13 (pg/m L)`~temp$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-ggplot(data=temp, aes(x=`Cohort`, y=`Plasma CXCL13 (pg/m L)`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("Plasma CXCL13 at day 7") + ylab("CXCL13 (pg/mL)") + # scale_y_continuous(breaks=seq(1:5), limits=c(0,5)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/CXCL13plasma_allD7.pdf")
-
-
-
-###################################################################################################### --------------- D0-D7 plots by Cohort ----------------
-
-temp <- Yr3data[-which(Yr3data$`Time Category`=="late"),]
-ggplot(temp, aes(x=`Time Category`, y=`ICOS+CD38+ c Tfh Freq`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) +  theme_bw() +
-  geom_boxplot(size=1) +  # geom_line(aes(group=`Participant ID`),size=1) + 
-  ggtitle("All years: ICOS+CD38+ cTfh responses") + ylab("ICOS+CD38+ cTfh freq") + # scale_y_continuous(breaks=seq(1:3), limits=c(0,3)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) 
-# ggsave(filename = "Images/cTfhResponses_BeforeAfterallyears.pdf",width=7, height=7)
-
-ggplot(temp, aes(x=`Time Category`, y=`CD19+/CD27+CD38+ Freq`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) +  theme_bw() +
-  geom_boxplot(size=1) +  # geom_line(aes(group=`Participant ID`),size=1) + 
-  ggtitle("All years: Plasmablast responses") + ylab("Plasmablast freq") + # scale_y_continuous(breaks=seq(1:3), limits=c(0,3)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) 
-# ggsave(filename = "Images/PlasmablastResponses_BeforeAfterallyears.pdf",width=7, height=7)
-
-
-
-###################################################################################################### --------------- HAI titers by Cohort ----------------
-
-temp <- finalDataset[-which(finalDataset$`Time Category`=="oneWeek"),]
-ggplot(temp, aes(x=`Time Category`, y=`HAI titer (H1N1pdm09)`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) +  theme_bw() +
-  geom_boxplot() + #geom_line(aes(group=`Participant ID`),size=1) + 
-  ggtitle("All years: HAI titers") + ylab("H1N1pdm09 titer") + # scale_y_continuous(breaks=seq(1:3), limits=c(0,3)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) 
-
-
-
-
 
 
 
@@ -132,8 +18,15 @@ ggplot(temp, aes(x=`Time Category`, y=`HAI titer (H1N1pdm09)`, fill=`Cohort`)) +
 twoSampleBox <- function (data, xData, yData, fillParam, title, yLabel)
 {
   fit <- lm(data[,yData] ~ data[,xData])
-  pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);  CI <- confint(fit)[2,]; CI <- round(CI,2)
-  annotationInfo <- paste0("P = ", pValue,"\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")
+  pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
+  if (pValue < 0.01)
+  {
+    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1), "\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")
+  }
+  if (pValue >= 0.01)
+  {
+    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")
+  }
   my_grob = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
   return (
     ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) +  
@@ -147,9 +40,17 @@ twoSampleBox <- function (data, xData, yData, fillParam, title, yLabel)
 
 univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
 {
-  pearson <- round(cor(data[,xData], data[,yData], method = "pearson"), 2)
+  pearson <- round(cor(data[,xData], data[,yData], method = "pearson", use = "complete.obs"), 2)
   pValue <- cor.test(data[,xData], data[,yData], method="pearson")
-  annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", round(pValue$p.value,2))
+  if (pValue$p.value < 0.01)
+  {
+    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", formatC(pValue$p.value, format="e", digits=1))
+  }
+  if (pValue$p.value >= 0.01)
+  {
+    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", round(pValue$p.value,2))
+  }
+  
   my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
   return (
     ggplot(data ) + 
@@ -168,40 +69,60 @@ univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
 
 
 setwd("D:/Pembro-Fluvac/Analysis")
-UPennYr3 <- read.csv(file = "D:/Pembro-Fluvac/18-19season/Flow cytometry/Tcell/Analysis/mergeData_freqParent.csv", stringsAsFactors = F, header = T, row.names = 1)
-UPennYr3 <- UPennYr3[which(UPennYr3$Cohort != "nonPD1"),]
+mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_freqParent_allyrs.csv", stringsAsFactors = F, header = T, row.names = 1)
 
+serology <- read.csv(file= "D:/Pembro-Fluvac/Analysis/mergedData/SerologyMeasurements.csv", stringsAsFactors = F, header = T)
+temp1 <- merge(x = mergedData, y=serology, all = T, suffixes = c(".Tflow",".Serology"), by= c('Label', 'TimeCategory','Cohort','Subject','TimePoint','Year'))
 
-## ------------------------------------------------- just day 7 frequencies ----------------------------------------------------------
+Bflow <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_freqParent_allyrs.csv", stringsAsFactors = F, header = T, row.names = 1)
+temp2 <- merge(x = temp1, y=Bflow, all = T, suffixes = c(".Tflow",".Bflow"), by= c('Label', 'TimeCategory','Cohort','Subject','TimePoint','Year'))
 
-subsetData <- UPennYr3[which(UPennYr3$Cohort != "nonPD1" & UPennYr3$TimeCategory == "oneWeek"),]
+mergedData <- temp2
+
+## ------------------------------------------------- PB and Tfh just day 7 frequencies ----------------------------------------------------------
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek" & Year == "3" & cTfh_ICOShiCD38hi_..FreqParent > 0)
 a <- twoSampleBox(data=subsetData, xData="Cohort", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam="Cohort", title="Yr3: ICOS+CD38+ cTfh at d7", yLabel="ICOS+CD38+ cTfh frequency at d7")
 a + scale_y_continuous(breaks=seq(1:12), limits=c(0.5,11))
 
-subsetData <- UPennYr3[which(UPennYr3$Cohort != "nonPD1" & UPennYr3$TimeCategory == "oneWeek"),]
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek" & Year == "3")
 a <- twoSampleBox(data=subsetData, xData="Cohort", yData="CD19_CD27.CD38....FreqParent", fillParam="Cohort", title="Yr3: Plasmablast at d7", yLabel="CD19+CD27++CD38++ frequency at d7")
 a + scale_y_continuous(breaks=seq(0,99,1))
 
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek" & cTfh_ICOShiCD38hi_..FreqParent > 0)
+a <- twoSampleBox(data=subsetData, xData="Cohort", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam="Cohort", title="All yrs: ICOS+CD38+ cTfh at d7", yLabel="ICOS+CD38+ cTfh frequency at d7")
+a + scale_y_continuous(breaks=seq(0,99,1))
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek")
+a <- twoSampleBox(data=subsetData, xData="Cohort", yData="CD19_CD27.CD38....FreqParent", fillParam="Cohort", title="All yrs: Plasmablast at d7", yLabel="CD19+CD27++CD38++ frequency at d7")
+a # + scale_y_continuous(breaks=seq(0,99,1))
 
 
-## ------------------------------------------------- Fold-change at day 7  ----------------------------------------------------------
+## ------------------------------------------------- Tfh and PB Fold-change at day 7  ----------------------------------------------------------
 
-subsetData <- subset(UPennYr3, TimeCategory != "late")
+subsetData <- subset(mergedData, TimeCategory != "late" & Year == "3" & Cohort != "nonPD1")
 FC_Tfhresponse <- dcast(subsetData, `Subject`+`Cohort`~`TimeCategory`, value.var = c("cTfh_ICOShiCD38hi_..FreqParent")); 
 FC_Tfhresponse$FC <- FC_Tfhresponse$`oneWeek`/FC_Tfhresponse$`baseline`
 a <- twoSampleBox(data=FC_Tfhresponse, xData="Cohort", yData="FC", fillParam="Cohort", title="Yr3: cTfh response at one week", yLabel="ICOS+CD38+ cTfh fold-change")
 a + scale_y_continuous(breaks=seq(0,99,1))
 
-subsetData <- subset(UPennYr3, TimeCategory != "late")
+subsetData <- subset(mergedData, TimeCategory != "late" & Year == "3" & Cohort != "nonPD1")
 FC_Tfhresponse <- dcast(subsetData, `Subject`+`Cohort`~`TimeCategory`, value.var = c("CD19_CD27.CD38....FreqParent")); 
 FC_Tfhresponse$FC <- FC_Tfhresponse$`oneWeek`/FC_Tfhresponse$`baseline`
 a <- twoSampleBox(data=FC_Tfhresponse, xData="Cohort", yData="FC", fillParam="Cohort", title="Yr3: Plasmablast response at one week", yLabel="CD19+CD27++CD38++ fold-change")
 a + scale_y_continuous(breaks=seq(0,99,1))
 
+subsetData <- subset(mergedData, TimeCategory != "late" & Cohort != "nonPD1" & cTfh_ICOShiCD38hi_..FreqParent > 0)
+FC_Tfhresponse <- dcast(subsetData, `Subject`+`Cohort`~`TimeCategory`, value.var = c("cTfh_ICOShiCD38hi_..FreqParent")); 
+FC_Tfhresponse$FC <- FC_Tfhresponse$`oneWeek`/FC_Tfhresponse$`baseline`
+a <- twoSampleBox(data=FC_Tfhresponse, xData="Cohort", yData="FC", fillParam="Cohort", title="All yrs: cTfh response at one week", yLabel="ICOS+CD38+ cTfh fold-change")
+a + scale_y_continuous(breaks=seq(0,99,1))
 
-## ------------------------------------------------- Scatterplots of PB vs cTfh  ----------------------------------------------------------
 
-subsetData <- subset(UPennYr3, Cohort == "aPD1" )
+
+## ------------------------------------------------- PB vs cTfh response correlations ----------------------------------------------------------
+
+subsetData <- subset(mergedData, Cohort == "aPD1" & Year == "3" )
 subsubsetData <- subset(subsetData, TimeCategory == "oneWeek")
 # xData = "CD19_CD27.CD38....FreqParent"; yData="cTfh_ICOShiCD38hi_..FreqParent"
 # z <- summary(rlm(subsubsetData[, yData] ~ subsubsetData[, xData]))
@@ -210,13 +131,33 @@ a <- univScatter(subsubsetData, xData = "CD19_CD27.CD38....FreqParent", yData="c
                       title = "Yr3: aPD1 subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
 a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,99,1))
 
-subsetData <- subset(UPennYr3, Cohort == "Healthy" )
+subsetData <- subset(mergedData, Cohort == "Healthy" & Year == "3" )
 subsubsetData <- subset(subsetData, TimeCategory == "oneWeek")
 a <- univScatter(subsubsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = NULL, 
                       title = "Yr3: Healthy subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
 a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,99,1))
 
 
+
+subsetData <- subset(mergedData, Cohort == "aPD1" & TimeCategory == "oneWeek" )
+univScatter(subsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = NULL, 
+            title = "All yrs: aPD1 subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
+
+
+subsetData <- subset(mergedData, Cohort == "Healthy" & TimeCategory == "oneWeek" )
+a <- univScatter(subsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = NULL, 
+            title = "All yrs: Healthy subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
+a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,99,1))
+
+
+
+## ------------------------------------------------- Scatterplots of PB vs cTfh  ----------------------------------------------------------
+
+
+subsetData <- subset(mergedData, Cohort == "aPD1" & TimeCategory == "oneWeek" )
+univScatter(subsetData, xData = "HAI.titer..H1N1pdm09.", yData="Plasma.CXCL13..pg.mL.", fillParam = NULL, 
+                 title = "All yrs: aPD1 subjects at one week", xLabel= "HAI titer - H1N1pdm09", yLabel = "Plasma CXCL13 (pg/mL)")
+ 
 
 
 
@@ -248,55 +189,4 @@ a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,
 
 
 
-
-###################################################################################################### --------------- Yr3D7 ICOS+CD38+ by Cohort ----------------
-fit <- lm(Yr3D7$`ICOS+CD38+ c Tfh Freq`~Yr3D7$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-
-ggplot(data=Yr3D7, aes(x=`Cohort`, y=`ICOS+CD38+ c Tfh Freq`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) +  
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("Year 3 day 7: cTfh responses") + ylab("ICOS+CD38+ cTfh freq at d7") + scale_y_continuous(breaks=seq(1:12), limits=c(0.5,11)) +  
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/cTfhresponses_Yr3D7.pdf")
-
-
-###################################################################################################### --------------- Yr3D7 plasmablast Cohort ----------------
-fit <- lm(Yr3D7$`CD19+/CD27+CD38+ Freq`~Yr3D7$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-ggplot(data=Yr3D7, aes(x=`Cohort`, y=`CD19+/CD27+CD38+ Freq`, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("Year 3 day 7: Plasmablast responses") + ylab("Plasmablast freq at d7") + scale_y_continuous(breaks=seq(1:3)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/Plasmablastresponses_Yr3D7.pdf")
-
-###################################################################################################### --------------- FC ICOS+CD38+ by Cohort ----------------
-
-FC_Tfhresponse <- dcast(finalDataset, `Participant ID`+`Cohort`~`Time Category`, value.var = c("ICOS+CD38+ c Tfh Freq")); FC_Tfhresponse$FC <- FC_Tfhresponse$oneWeek/FC_Tfhresponse$baseline
-fit <- lm(FC_Tfhresponse$FC~FC_Tfhresponse$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-ggplot(data=FC_Tfhresponse, aes(x=`Cohort`, y=FC, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("All years: ICOS+CD38+ cTfh responses") + ylab("ICOS+CD38+ cTfh fold-change") + # scale_y_continuous(breaks=seq(1:3), limits=c(0,3)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/cTfhResponses_FCallyears.pdf")
-
-###################################################################################################### --------------- FC Plasmablast by Cohort ----------------
-
-
-FC_PBresponse <- dcast(finalDataset, `Participant ID`+`Cohort`~`Time Category`, value.var = c("CD19+/CD27+CD38+ Freq")); FC_PBresponse$FC <- FC_PBresponse$oneWeek/FC_PBresponse$baseline
-fit <- lm(FC_PBresponse$FC~FC_PBresponse$Cohort)
-summary(fit); pValue <- round(summary(fit)$coefficients[2,"Pr(>|t|)"],2);   CI <- confint(fit)[2,]; CI <- round(CI,2)
-annotationInfo <- paste0("p = ", pValue,"\n","95%CI: [",CI[1],",",CI[2],"]"); my_grob1 = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-ggplot(data=FC_PBresponse, aes(x=`Cohort`, y=FC, fill=`Cohort`)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) + 
-  geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-  ggtitle("All years: ICOS+CD38+ cTfh responses") + ylab("ICOS+CD38+ cTfh fold-change") + # scale_y_continuous(breaks=seq(1:3), limits=c(0,3)) +   
-  theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-  annotation_custom(my_grob1) + theme(legend.position = "none")
-# ggsave(filename = "Images/PlasmablastResponses_FCallyears.pdf")
 
