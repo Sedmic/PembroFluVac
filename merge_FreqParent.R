@@ -17,13 +17,17 @@ for (i in 1:length(files))
   mergeDataYr3 <- rbind(mergeDataYr3, temp)
 }
 
-mergeDataYr2 <- read.csv(file = "D:/Pembro-Fluvac/17-18season/TcellPanel/Analysis/FreqParent.csv", stringsAsFactors = F, header = T, row.names = 1)
+mergeDataYr2 <- read.csv(file = "D:/Pembro-Fluvac/17-18season/TcellPanel/Analysis/FreqParent_aPD1.csv", stringsAsFactors = F, header = T, row.names = 1)
 mergeDataYr2$Batch = i+1
+temp <- read.csv(file = "D:/Pembro-Fluvac/17-18season/TcellPanel/Analysis/FreqParent_healthy.csv", stringsAsFactors = F, header=T, row.names=1)
+temp$Batch = i+2
+mergeDataYr2 <- rbind(mergeDataYr2, temp)
+
 
 setwd("D:/Pembro-Fluvac/16-17season/Analysis/freqParent/")
 files <-   list.files("./", pattern=').csv$', full=F) # this list is all of the duplicates that Windows Explorer appends with (x) postfix to filename
 mergeDataYr1 <- read.csv(file = "byParent-2019edition.csv", stringsAsFactors = F, header = T, row.names = 1)
-mergeDataYr1$Batch = i+2
+mergeDataYr1$Batch = i+3
 for (j in 1:length(files))
 {
   temp <- read.csv(files[j], stringsAsFactors = F, header=T, row.names=1)

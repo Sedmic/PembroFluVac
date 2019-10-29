@@ -3,70 +3,14 @@ library("ggplot2")
 library("gplots")
 library("viridis")
 library("reshape2")
-library("ggpubr")
-library("ggcorrplot")
+# library("ggpubr")
+# library("ggcorrplot")
 library("gridExtra")
 library("RColorBrewer")
 library("scales")
 library("MASS")
 
-
-
-## ------------------------------------------- PLOTTING FUNCTIONS ------------------------------------------------------------------------------
-
-
-twoSampleBox <- function (data, xData, yData, fillParam, title, yLabel)
-{
-  fit <- lm(data[,yData] ~ data[,xData])
-  pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
-  if (pValue < 0.01)
-  {
-    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1), "\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")
-  }
-  if (pValue >= 0.01)
-  {
-    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")
-  }
-  my_grob = grobTree(textGrob(annotationInfo, x=0.63,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-  return (
-    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#abcdef", "#ffcab1")) +  
-      geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
-      ggtitle(title) + ylab(yLabel) +  
-      theme(axis.text = element_text(size=22,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=28,hjust = 0.5)) + 
-      annotation_custom(my_grob) + theme(legend.position = "none")    
-  )
-}
-
-
-univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
-{
-  pearson <- round(cor(data[,xData], data[,yData], method = "pearson", use = "complete.obs"), 2)
-  pValue <- cor.test(data[,xData], data[,yData], method="pearson")
-  if (pValue$p.value < 0.01)
-  {
-    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", formatC(pValue$p.value, format="e", digits=1))
-  }
-  if (pValue$p.value >= 0.01)
-  {
-    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", round(pValue$p.value,2))
-  }
-  
-  my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=18)))
-  return (
-    ggplot(data ) + 
-      geom_smooth(aes_string(x=xData, y=yData), method='lm') + aes(color="one",  fill = "two") +
-      geom_point(aes_string(x=xData, y=yData), size=5, fill=quote('black')) + theme_bw() + 
-      scale_color_manual(name="Val", values=c(one="black")) + 
-      scale_fill_manual(name="fills", values=c(two="grey90")) + 
-      ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
-      theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5)) + 
-      annotation_custom(my_grob) + theme(legend.position = "none")   
-  )
-}
-
-
-
-
+source('D:/Pembro-Fluvac/Analysis/PembroFluSpec_Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
 
 setwd("D:/Pembro-Fluvac/Analysis")
 mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_freqParent_allyrs.csv", stringsAsFactors = F, header = T, row.names = 1)
@@ -78,6 +22,9 @@ Bflow <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_f
 temp2 <- merge(x = temp1, y=Bflow, all = T, suffixes = c(".Tflow",".Bflow"), by= c('Label', 'TimeCategory','Cohort','Subject','TimePoint','Year'))
 
 mergedData <- temp2
+mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline", "oneWeek","late"))
+mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
+
 
 ## ------------------------------------------------- PB and Tfh just day 7 frequencies ----------------------------------------------------------
 
@@ -127,37 +74,117 @@ subsubsetData <- subset(subsetData, TimeCategory == "oneWeek")
 # xData = "CD19_CD27.CD38....FreqParent"; yData="cTfh_ICOShiCD38hi_..FreqParent"
 # z <- summary(rlm(subsubsetData[, yData] ~ subsubsetData[, xData]))
 # y <- summary(lm(subsubsetData[, yData] ~ subsubsetData[, xData]))
-a <- univScatter(subsubsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = NULL, 
-                      title = "Yr3: aPD1 subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
+a <- univScatter(subsubsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = "Cohort", 
+                      title = "Yr3 aPD1: cTfh vs PB at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
 a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,99,1))
 
-subsetData <- subset(mergedData, Cohort == "Healthy" & Year == "3" )
+subsetData <- subset(mergedData, Cohort == "Healthy" & Year == "3" & cTfh_ICOShiCD38hi_..FreqParent > 1)    #  *****   OUTLIER REMOVED
 subsubsetData <- subset(subsetData, TimeCategory == "oneWeek")
-a <- univScatter(subsubsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = NULL, 
-                      title = "Yr3: Healthy subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
+a <- univScatter(subsubsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = "Cohort", 
+                      title = "Yr3 Healthy: cTfh vs PB at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
+a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,99,1))
+
+oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
+subsetData1 <- subset(oneWeek, Cohort == "Healthy" & Year == "3" & cTfh_ICOShiCD38hi_..FreqParent > 1)    #  *****   OUTLIER REMOVED
+subsetData2 <- subset(oneWeek, Cohort == "aPD1" & Year == "3" & cTfh_ICOShiCD38hi_..FreqParent > 1)    #  *****   OUTLIER REMOVED
+a <- bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+                fillParam = "Cohort", title = "Yr3: cTfh vs PB response at oneWeek", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
 a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,99,1))
 
 
 
 subsetData <- subset(mergedData, Cohort == "aPD1" & TimeCategory == "oneWeek" )
-univScatter(subsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = NULL, 
-            title = "All yrs: aPD1 subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
+univScatter(subsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = "Cohort", 
+            title = "All yrs aPD1: cTfh vs PB at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
 
 
-subsetData <- subset(mergedData, Cohort == "Healthy" & TimeCategory == "oneWeek" )
-a <- univScatter(subsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = NULL, 
-            title = "All yrs: Healthy subjects at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
+subsetData <- subset(mergedData, Cohort == "Healthy" & TimeCategory == "oneWeek" & cTfh_ICOShiCD38hi_..FreqParent > 1)   #  *****   OUTLIER REMOVED
+a <- univScatter(subsetData, xData = "CD19_CD27.CD38....FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam = "Cohort", 
+            title = "All yrs Healthy: cTfh vs PB at one week", xLabel= "Plasmablast frequency", yLabel = "ICOS+CD38+ cTfh frequency")
 a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,99,1))
 
 
 
-## ------------------------------------------------- Scatterplots of PB vs cTfh  ----------------------------------------------------------
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+a <- prePostTime(subsetData, xData = "TimeCategory", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "Cohort", title = "cTfh response over time", xLabel = "TimeCategory",
+                 yLabel = "ICOS+CD38+ cTfh frequency", groupby = "Subject"); a + scale_y_continuous(breaks=seq(0,150,5))     # limits = c(0,45)
+subsetData <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("cTfh_ICOShiCD38hi_..FreqParent"))
+overTime <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=mean, na.rm = T)
+overTimeSD <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=sd, na.rm = T)
+overTimeN <- t(as.matrix(table(subsetData$Cohort, subsetData$TimeCategory)))
+overTimeSD$SE <- overTimeSE$x / sqrt(as.vector(overTimeN[1:6]))
+overTime$SE <- overTimeSD$SE
+temp <- colnames(overTime); temp[which(temp == "x")] <- "Ave"; colnames(overTime) <- temp
+ggplot(data=overTime, aes(x=Group.2, y=Ave, group = Group.3, color=as.factor(Group.3))) + theme_bw() + 
+  geom_ribbon(aes(x=Group.2, ymin=Ave-SE, ymax=Ave+SE, fill=Group.3), alpha=0.1) + 
+  geom_line(aes(size=3)) +  
+  geom_point(aes(size=4, fill=Group.3), pch=21) + 
+  scale_color_manual(values=c("#abcdef", "#ffcab1")) +     scale_fill_manual(values=c("#abcdef", "#ffcab1")) + 
+  ggtitle("Averaged cTfh responses") + ylab("ICOS+CD38+ cTfh response over time") + xlab(NULL)  +
+  theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
+        legend.position = "none", strip.text = element_text(size = 40, color="red"), strip.background = element_rect(color="white")) 
+
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
+twoSampleBox(data=subsetData, xData="Cohort", yData="cTfh_ICOShiCD38hi_..FreqParent", fillParam="Cohort", title="cTfh response at Late", yLabel="ICOS+CD38+ cTfh freq - Late")
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+a <- prePostTime(subsetData, xData = "TimeCategory", yData = "CD19_CD27.CD38....FreqParent", fillParam = "Cohort", title = "PB response over time", xLabel = "TimeCategory",
+                 yLabel = "Plasmablast frequency", groupby = "Subject"); a + scale_y_continuous(breaks=seq(0,150,5))     # limits = c(0,45)
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
+twoSampleBox(data=subsetData, xData="Cohort", yData="CD19_CD27.CD38....FreqParent", fillParam="Cohort", title="PB response at Late", yLabel="Plasmablast freq - Late")
+
+
+## ------------------------------------------------- Scatterplots of HAI titer vs CXCL13  ----------------------------------------------------------
 
 
 subsetData <- subset(mergedData, Cohort == "aPD1" & TimeCategory == "oneWeek" )
-univScatter(subsetData, xData = "HAI.titer..H1N1pdm09.", yData="Plasma.CXCL13..pg.mL.", fillParam = NULL, 
-                 title = "All yrs: aPD1 subjects at one week", xLabel= "HAI titer - H1N1pdm09", yLabel = "Plasma CXCL13 (pg/mL)")
+univScatter(subsetData, xData = "HAI.titer..H1N1pdm09.", yData="Plasma.CXCL13..pg.mL.", fillParam = "Cohort", 
+                 title = "All yrs aPD1: CXCL13 vs HAI at one week", xLabel= "HAI titer - H1N1pdm09", yLabel = "Plasma CXCL13 (pg/mL)")
+
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+crossTimeCategory <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c('Plasma.CXCL13..pg.mL.' , 'HAI.titer..H1N1pdm09.') )
+crossTimeCategory2 <- dcast(crossTimeCategory, Subject + Cohort ~ TimeCategory + variable)
+univScatter(crossTimeCategory2, xData = "baseline_Plasma.CXCL13..pg.mL.", yData="late_HAI.titer..H1N1pdm09.", fillParam = NULL, 
+            title = "All yrs: Late HAI vs baseline CXCL13", xLabel= "baseline Plasma CXCL13 (pg/mL)", yLabel = "Late HAI titer - H1N1pdm09")   # nonstd appearance due to lack of fillParam
+univScatter(crossTimeCategory2, xData = "oneWeek_Plasma.CXCL13..pg.mL.", yData="late_HAI.titer..H1N1pdm09.", fillParam = NULL, 
+            title = "All yrs: Late HAI vs d7 CXCL13", xLabel= "oneWeek Plasma CXCL13 (pg/mL)", yLabel = "Late HAI titer - H1N1pdm09")   # nonstd appearance due to lack of fillParam
+
+
+
  
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+a <- prePostTime(subsetData, xData = "TimeCategory", yData = "HAI.titer..H1N1pdm09.", fillParam = "Cohort", title = "HAI titers over time", xLabel = "TimeCategory",
+            yLabel = "HAI titer", groupby = "Subject"); a + scale_y_continuous(trans='log2')
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")
+a <- twoSampleBox(data=subsetData, xData="Cohort", yData="HAI.titer..H1N1pdm09.", fillParam="Cohort", title="All yrs: HAI titers at d0", yLabel="H1N1pdm09 titer"); a + scale_y_continuous(trans='log2', breaks=c(2^(2:14) ) )
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek")
+a <- twoSampleBox(data=subsetData, xData="Cohort", yData="HAI.titer..H1N1pdm09.", fillParam="Cohort", title="All yrs: HAI titers at d7", yLabel="H1N1pdm09 titer"); a + scale_y_continuous(trans='log2', breaks=c(2^(2:14) ) )
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
+a <- twoSampleBox(data=subsetData, xData="Cohort", yData="HAI.titer..H1N1pdm09.", fillParam="Cohort", title="All yrs: HAI titers at d21-28", yLabel="H1N1pdm09 titer"); a + scale_y_continuous(trans='log2' , breaks=c(2^(2:14) ) )
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+seroconv <- dcast(subsetData, `Subject`+`Cohort`~`TimeCategory`, value.var = c("HAI.titer..H1N1pdm09.")); 
+seroconv$FC <- seroconv$`late`/seroconv$`baseline`
+a <- twoSampleBox(data=seroconv, xData="Cohort", yData="FC", fillParam="Cohort", title="All yrs: seroconversion", yLabel="Seroconversion factor")
+a + scale_y_continuous(breaks=seq(0,99,4))
+
+
+
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+a <- prePostTime(subsetData, xData = "TimeCategory", yData = "Plasma.CXCL13..pg.mL.", fillParam = "Cohort", title = "CXCL13 over itme", xLabel = "TimeCategory",
+            yLabel = "HAI titer", groupby = "Subject"); a + scale_y_continuous(breaks=seq(0,150,5))     # limits = c(0,45)
+
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")
+twoSampleBox(data=subsetData, xData="Cohort", yData="Plasma.CXCL13..pg.mL.", fillParam="Cohort", title="All yrs: Plasma CXCL13 at d0", yLabel="Plasma CXCL13 (pg/mL)")
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek")
+twoSampleBox(data=subsetData, xData="Cohort", yData="Plasma.CXCL13..pg.mL.", fillParam="Cohort", title="All yrs: Plasma CXCL13 at d7", yLabel="Plasma CXCL13 (pg/mL)")
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
+twoSampleBox(data=subsetData, xData="Cohort", yData="Plasma.CXCL13..pg.mL.", fillParam="Cohort", title="All yrs: Plasma CXCL13 at d21-28", yLabel="Plasma CXCL13 (pg/mL)")
 
 
 
@@ -172,20 +199,6 @@ univScatter(subsetData, xData = "HAI.titer..H1N1pdm09.", yData="Plasma.CXCL13..p
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-## ------------------------------------------- Deprecated  ------------------------------------------------------------------------------
 
 
 
