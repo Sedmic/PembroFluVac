@@ -8,30 +8,30 @@ a <- getwd()
 setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Tcell/Analysis/FreqParent")
 files <-   list.files("./", pattern=').csv$', full=F)   # this list is all of the duplicates that Windows Explorer appends with (x) postfix to filename
 mergeDataYr3 <- read.csv(file = "FreqParent.csv", stringsAsFactors = F, header = T, row.names = 1)
-mergeDataYr3$Batch = "0"
+mergeDataYr3$Yr3TflowBatch = "0"
 
 for (i in 1:length(files))
 {
   temp <- read.csv(files[i], stringsAsFactors = F, header=T, row.names=1)
-  temp$Batch = i
+  temp$TflowYr3Batch = i
   mergeDataYr3 <- rbind(mergeDataYr3, temp)
 }
 
 mergeDataYr2 <- read.csv(file = "D:/Pembro-Fluvac/17-18season/TcellPanel/Analysis/FreqParent_aPD1.csv", stringsAsFactors = F, header = T, row.names = 1)
-mergeDataYr2$Batch = i+1
+mergeDataYr2$TflowYr2Batch = 0
 temp <- read.csv(file = "D:/Pembro-Fluvac/17-18season/TcellPanel/Analysis/FreqParent_healthy.csv", stringsAsFactors = F, header=T, row.names=1)
-temp$Batch = i+2
+temp$TflowYr2Batch = 1
 mergeDataYr2 <- rbind(mergeDataYr2, temp)
 
 
 setwd("D:/Pembro-Fluvac/16-17season/Analysis/freqParent/")
 files <-   list.files("./", pattern=').csv$', full=F) # this list is all of the duplicates that Windows Explorer appends with (x) postfix to filename
 mergeDataYr1 <- read.csv(file = "byParent-2019edition.csv", stringsAsFactors = F, header = T, row.names = 1)
-mergeDataYr1$Batch = i+3
+mergeDataYr1$TflowYr1Batch = 0
 for (j in 1:length(files))
 {
   temp <- read.csv(files[j], stringsAsFactors = F, header=T, row.names=1)
-  temp$Batch = i + 2 + j
+  temp$TflowYr1Batch =  j
   mergeDataYr1 <- rbind(mergeDataYr1, temp)
 }
 
@@ -98,12 +98,12 @@ a <- getwd()
 setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/Analysis/FreqParent")
 files <-   list.files("./", pattern=').csv$', full=F)
 mergeDataYr3 <- read.csv(file = "FreqParent.csv", stringsAsFactors = F, header = T, row.names = 1)
-mergeDataYr3$Batch = "0"
+mergeDataYr3$BflowYr3Batch = "0"
 
 for (i in 1:length(files))
 {
   temp <- read.csv(files[i], stringsAsFactors = F, header=T, row.names=1)
-  temp$Batch = i
+  temp$BflowYr3Batch = i
   mergeDataYr3 <- rbind(mergeDataYr3, temp)
 }
 
@@ -150,16 +150,10 @@ Yr3data <- cleanColumnNames(mergeDataYr3);  Yr3data$Year <- 3
 # combinedYrs <- merge(x=Yr3data, y=Yr2data, all=T)
 
 
-write.csv(Yr3data, file = "../mergeData_freqParent.csv")   # year 3 only
-write.csv(Yr3data, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_freqParent_allyrs.csv")    # all years combined
+# write.csv(Yr3data, file = "../mergeData_freqParent.csv")   # year 3 only
+# write.csv(Yr3data, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_freqParent_allyrs.csv")    # all years combined
 
 setwd(a) 
 
 # -------------------------------------------------------------------------------------------------------------------------------
 
-
-
-
-melted <- melt(mergeData[,-c(119:123)], id.vars = "Label");  melted$value <- as.numeric(melted$value)
-ggplot(melted, aes(x=value)) +   geom_histogram(bins = 20) +   facet_wrap(~variable, scales = 'free') + theme_bw()
-ggplot(melted, aes(x=variable, y=log(value))) +   geom_boxplot() + theme_bw()
