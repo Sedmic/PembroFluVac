@@ -12,18 +12,60 @@ library("MASS")
 
 source('D:/Pembro-Fluvac/Analysis/PembroFluSpec_Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
 
+
+## ------------------------------------------------- merge & qc data from spreadsheets  ----------------------------------------------------------
+
 setwd("D:/Pembro-Fluvac/Analysis")
 mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_freqParent_allyrs.csv", stringsAsFactors = F, header = T, row.names = 1)
+fit <- lm(data=mergedData[ , - which( colnames(mergedData) == "Label" | colnames(mergedData) == "Subject" | colnames(mergedData) == "Cohort" | 
+                                        colnames(mergedData) == "TimeCategory" | colnames(mergedData) == "TimePoint")], 
+          formula = TflowBatch  ~ .)
+a <- as.data.frame(summary(fit)$coefficients)
+a <- rownames(a[which(a$`Pr(>|t|)` < 0.05), ] )
+if (length (a) > 0) { colnames(mergedData) [ grep( paste(a, collapse="|"), colnames(mergedData)) ] <- paste0( colnames(mergedData)[ grep( paste(a, collapse="|"), colnames(mergedData)) ], ".batchEffect" ) }
 
 serology <- read.csv(file= "D:/Pembro-Fluvac/Analysis/mergedData/SerologyMeasurements.csv", stringsAsFactors = F, header = T)
+
 temp1 <- merge(x = mergedData, y=serology, all = T, suffixes = c(".Tflow",".Serology"), by= c('Label', 'TimeCategory','Cohort','Subject','TimePoint','Year'))
 
+
 Bflow <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_freqParent_allyrs.csv", stringsAsFactors = F, header = T, row.names = 1)
+Bflow <- Bflow[, -c( grep( colnames(Bflow), pattern=paste0(c("Naive","Lymphocytes", "CD4","CD19hi_..FreqParent","CD19hi_CD11c","CD19hi_CD16","CD19hi_CD23","CD1hi9_CD25",
+                                                             "CD19hi_CD32","CD19hi_CD38lo...FreqParent","CD19hi_CD80","CD19hi_CD86","CD19hi_IgM","CD19hi_CD138",
+                                                             "CD19hi_CXCR4","CD19hi_CD71","CD19hi_Ki67..CXCR4","CD19hi_Ki67..Ki67","CD38lo...FreqParent",
+                                                             "CD19hi_Tbet"), collapse ="|")) )]    # cut out columns to test for batch fx, else variables > observations
+fit <- lm(data=Bflow[ , - which( colnames(Bflow) == "Label" | colnames(Bflow) == "Subject" | colnames(Bflow) == "Cohort" | 
+                                        colnames(Bflow) == "TimeCategory" | colnames(Bflow) == "TimePoint")], 
+          formula = BflowBatch  ~ .)
+a <- as.data.frame(summary(fit)$coefficients)
+a <- rownames(a[which(a$`Pr(>|t|)` < 0.05), ] )
+if (length (a) > 0) { colnames(Bflow) [ grep( paste(a, collapse="|"), colnames(Bflow)) ] <- paste0( colnames(Bflow)[ grep( paste(a, collapse="|"), colnames(Bflow)) ], ".batchEffect" )}
 temp2 <- merge(x = temp1, y=Bflow, all = T, suffixes = c(".Tflow",".Bflow"), by= c('Label', 'TimeCategory','Cohort','Subject','TimePoint','Year'))
 
-mergedData <- temp2
+
+Tmfi <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_medianFI_allyrs.csv", stringsAsFactors = F, header = T, row.names = 1)
+Tmfi <- Tmfi[, -c(grep( colnames(Tmfi), pattern=paste0(c("Dead","medfi.CD20","medfi.CD4","Freq","ICOSlo"), collapse ="|")))]  # cut out columns to test for batch fx, else variables > observations
+
+fit <- lm(data=Tmfi[ , - which( colnames(Tmfi) == "Label" | colnames(Tmfi) == "Subject" | colnames(Tmfi) == "Cohort" | 
+                                   colnames(Tmfi) == "TimeCategory" | colnames(Tmfi) == "TimePoint")], 
+          formula = TmfiBatch  ~ .)
+a <- as.data.frame(summary(fit)$coefficients)
+a <- rownames(a[which(a$`Pr(>|t|)` < 0.05), ] )
+if (length (a) > 0) { colnames(Tmfi) [ grep( paste(a, collapse="|"), colnames(Tmfi)) ] <- paste0( colnames(Tmfi)[ grep( paste(a, collapse="|"), colnames(Tmfi)) ], ".batchEffect" )}
+
+
+temp3 <- merge(x = temp2, y=Tmfi, all = T, suffixes = c(".one",".Tmedfi"), by= c('Label', 'TimeCategory','Cohort','Subject','TimePoint','Year'))
+mergedData <- temp3 
+
+
 mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline", "oneWeek","late"))
 mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
+# rm(Tflow); rm(Bflow); rm(temp1); rm(temp2); rm(temp3)
+
+
+
+
+
 
 
 ## ------------------------------------------------- PB and Tfh just day 7 frequencies ----------------------------------------------------------
@@ -108,21 +150,19 @@ a + scale_x_continuous(breaks=seq(0,99,0.25)) + scale_y_continuous(breaks=seq(0,
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 a <- prePostTime(subsetData, xData = "TimeCategory", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "Cohort", title = "cTfh response over time", xLabel = "TimeCategory",
                  yLabel = "ICOS+CD38+ cTfh frequency", groupby = "Subject"); a + scale_y_continuous(breaks=seq(0,150,5))     # limits = c(0,45)
-subsetData <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("cTfh_ICOShiCD38hi_..FreqParent"))
-overTime <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=mean, na.rm = T)
-overTimeSD <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=sd, na.rm = T)
-overTimeN <- t(as.matrix(table(subsetData$Cohort, subsetData$TimeCategory)))
-overTimeSD$SE <- overTimeSE$x / sqrt(as.vector(overTimeN[1:6]))
-overTime$SE <- overTimeSD$SE
-temp <- colnames(overTime); temp[which(temp == "x")] <- "Ave"; colnames(overTime) <- temp
-ggplot(data=overTime, aes(x=Group.2, y=Ave, group = Group.3, color=as.factor(Group.3))) + theme_bw() + 
-  geom_ribbon(aes(x=Group.2, ymin=Ave-SE, ymax=Ave+SE, fill=Group.3), alpha=0.1) + 
-  geom_line(aes(size=3)) +  
-  geom_point(aes(size=4, fill=Group.3), pch=21) + 
-  scale_color_manual(values=c("#abcdef", "#ffcab1")) +     scale_fill_manual(values=c("#abcdef", "#ffcab1")) + 
-  ggtitle("Averaged cTfh responses") + ylab("ICOS+CD38+ cTfh response over time") + xlab(NULL)  +
-  theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
-        legend.position = "none", strip.text = element_text(size = 40, color="red"), strip.background = element_rect(color="white")) 
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("cTfh_ICOShiCD38hi_..FreqParent"))
+a <- prePostTimeAveraged(melted, title = "cTfh responses averaged", xLabel = NULL, yLabel = "Average ICOS+CD38+ cTfh frequency"); a + scale_y_continuous(breaks=seq(0,99,0.5))
+  
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("CD19_CD27.CD38....FreqParent"))
+a <- prePostTimeAveraged(melted, title = "Plasmablast responses averaged", xLabel = NULL, yLabel = "Average Plasmablast frequency"); a + scale_y_continuous(breaks=seq(0,99,0.25))
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("Plasma.CXCL13..pg.mL."))
+a <- prePostTimeAveraged(melted, title = "CXCL13 responses averaged", xLabel = NULL, yLabel = "Average plasma CXCL13 (pg/mL)"); a + scale_y_continuous(breaks=seq(0,99,1))
+
 
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
@@ -189,6 +229,7 @@ twoSampleBox(data=subsetData, xData="Cohort", yData="Plasma.CXCL13..pg.mL.", fil
 
 
 
+## ------------------------------------------------- Working with the medianFI for different parameters  ----------------------------------------------------------
 
 
 

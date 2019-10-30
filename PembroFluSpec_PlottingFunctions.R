@@ -90,7 +90,7 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
   subsetData <- data[ which( data$Subject %in% names(targets)   ), ]
   subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
   return(
-    ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + 
+    ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
       geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
       geom_path(aes_string(group=groupby), color="grey60") + 
       geom_point(size = 1, color="grey60") + facet_wrap(fillParam ) + 
@@ -98,29 +98,39 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
       scale_fill_manual(values=c("#abcdef", "#ffcab1")) + 
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
       theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
-            legend.position = "none", strip.text = element_text(size = 40, color="red"), strip.background = element_rect(color="white")) + 
-      theme_bw() # + scale_y_continuous(trans='log2') 
+            legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white")) 
+      
   )
 }
 
-prePostTimeAveraged <- function(data, xData, yData, fillParam, groupby, title, xLabel, yLabel)
+prePostTimeAveraged <- function(data, title, xLabel, yLabel)
 {
-  targets <- which(table(data$Subject) > 1)
-  subsetData <- data[ which( data$Subject %in% names(targets)   ), ]
-  subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
+  subsetData <- data
+  overTime <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=mean, na.rm = T)
+  overTimeSD <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=sd, na.rm = T)
+  overTimeN <- t(as.matrix(table(subsetData$Cohort, subsetData$TimeCategory)))
+  overTimeSD$SE <- overTimeSD$x / sqrt(as.vector(overTimeN[1:6]))
+  overTime$SE <- overTimeSD$SE
+  temp <- colnames(overTime); temp[which(temp == "x")] <- "Ave"; colnames(overTime) <- temp
+  annotationInfo1 <- paste0(unique(overTime$Group.3)[1])   
+  my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.90, hjust=0, gp=gpar(col="#abcdef", fontsize=24)))
+  annotationInfo2 <- paste0(unique(overTime$Group.3)[2])   
+  my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.82, hjust=0, gp=gpar(col="#ffcab1", fontsize=24)))
+  
   return(
-    ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + 
-      geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
-      geom_path(aes_string(group=groupby), color="grey60") + 
-      geom_point(size = 1, color="grey60") + facet_wrap(fillParam ) + 
-      scale_color_manual(values=c("#abcdef", "#ffcab1")) + 
+    ggplot(data=overTime, aes(x=Group.2, y=Ave, group = Group.3, color=as.factor(Group.3))) + theme_bw() + 
+      geom_ribbon(aes(x=Group.2, ymin=Ave-SE, ymax=Ave+SE, fill=Group.3), alpha=0.1) + 
+      geom_line(aes(size=3)) +  
+      geom_point(aes(size=4, fill=Group.3), pch=21) + 
+      scale_color_manual(values=c("#abcdef", "#ffcab1")) +     
       scale_fill_manual(values=c("#abcdef", "#ffcab1")) + 
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
       theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
-            legend.position = "none", strip.text = element_text(size = 40, color="red"), strip.background = element_rect(color="white")) + 
-      theme_bw() # + scale_y_continuous(trans='log2') 
+            legend.position = "none")  + annotation_custom(my_grob1) + annotation_custom(my_grob2)
   )
+
 }
+
 
 
 
