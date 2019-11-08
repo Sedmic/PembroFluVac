@@ -9,8 +9,8 @@ library("gridExtra")
 library("RColorBrewer")
 library("scales")
 library("MASS")
-# library("shadowtext")
-
+library("ggrepel")
+library("pheatmap")
 
 ## ------------------------------------------- PLOTTING FUNCTIONS ------------------------------------------------------------------------------
 
@@ -130,22 +130,73 @@ prePostTimeAveraged <- function(data, title, xLabel, yLabel)
 
 }
 
+volcanoPlot <- function( diffExprData, repelThresh, title, leftLabel, rightLabel )
+{
+  data <- diffExprData[which(diffExprData$lfcSE<2),]     # filter out very high SE which may be outliers
+  left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
+  right_grob <- grobTree(textGrob(rightLabel, x=0.9,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
+  return(
+    ggplot(data, aes(x=log2FoldChange, y=-log10(padj), label=row.names(data))) +
+    geom_point(alpha=0.2, size=3, colour="black") + theme_bw() +  theme(legend.position="none") + 
+    geom_text_repel(data=subset(data, padj< repelThresh), aes(label=row.names(subset(data, padj<repelThresh)))) + 
+    ggtitle(title) + xlab("log2 fold change") + ylab("-log10 p-adj") + 
+    annotation_custom(left_grob) + annotation_custom(right_grob)
+  )
+}
+
+
+plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel)
+{
+  mergeResults$NAME <- toTitleCase(tolower(substr(mergeResults$NAME,start =10, stop=50)))
+  mergeResults$NAME <- factor(mergeResults$NAME, levels = mergeResults$NAME[order(mergeResults$NES, decreasing = T)])
+  left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
+  right_grob <- grobTree(textGrob(rightLabel, x=0.8,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
+  mergeResults <- subset(mergeResults, `FDR.q.val` < 0.05)
+  return(
+    ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES), size=6) + 
+    geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+    geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+    coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
+    theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) + 
+    annotation_custom(left_grob) + annotation_custom(right_grob)
+  )
+}
+
+
+plotGSEAtraditional <- function (singlePathway, pathwayName, title, leftLabel, rightLabel, cohortCompare)
+{
+  if (cohortCompare == F)     {     colorGrob1 <- "black"; colorGrob2 <- "black"     }
+  if (cohortCompare == T)   { colorGrob1 <- "#FFB18C"; colorGrob2 <- "#7FAEDB"}
+  annotationInfo <- paste0("NES: ", round(mergeResults$NES[grep(pathwayName,mergeResults$NAME)],2), "\n", "FDR: ", formatC(mergeResults$FDR.q.val[grep(pathwayName,mergeResults$NAME)], format = "e", digits = 1))
+  my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.15, hjust=0, gp=gpar(col="black", fontsize=24)))
+  left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.98,hjust=0, gp=gpar(col=colorGrob1, fontsize=15)))
+  right_grob <- grobTree(textGrob(rightLabel, x=0.8,y=0.98,hjust=0, gp=gpar(col=colorGrob2, fontsize=15))) 
+  return(
+    ggplot(data=singlePathway, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES) ) + geom_line(color="black", size=1) + 
+    geom_rug(sides="b", size=0.75, alpha=0.5) + theme_bw() +
+    ggtitle(title) + ylab("Enrichment score") + xlab("Rank in gene list") + 
+    theme(axis.text = element_text(size=12,hjust = 0.5))+theme(axis.title = element_text(size=14,hjust = 0.5))+theme(plot.title = element_text(size=18,hjust = 0.5))+
+    annotation_custom(my_grob) + geom_hline(yintercept = 0) + 
+      annotation_custom(left_grob) + annotation_custom(right_grob)
+  )
+
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plotIPAlollipop <- function( pathways, title, leftLabel, rightLabel)
+{
+  pathways$NAME <- factor(pathways[,1], levels = pathways[order(pathways$z.score, decreasing = T), 1])  # factor names by zscore
+  left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
+  right_grob <- grobTree(textGrob(rightLabel, x=0.8,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
+  return(
+    ggplot(data=pathways) + geom_point(aes(x=NAME, y=z.score), size=6) + 
+      geom_bar( data = subset(pathways, `z.score` > 0), aes(x=NAME, y=z.score) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+      geom_bar( data = subset(pathways, `z.score` < 0), aes(x=NAME, y=z.score) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+      coord_flip() + theme_bw() + ggtitle(title) + ylab("z score") + xlab(NULL) + 
+      theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) + 
+      annotation_custom(left_grob) + annotation_custom(right_grob)
+  )
+}
 
 

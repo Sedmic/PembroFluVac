@@ -89,64 +89,40 @@ summary( glm(Cohort ~ . , family = binomial(link='logit'), data = subsetData[ , 
 
 # need to do a regularization approach here because more variables than observations
 
+#   BASELINE 
+
 subsetData <- subset(mergedData, TimeCategory == "baseline" & Cohort != "nonPD1")
 subsetData$Cohort <- factor(subsetData$Cohort, levels = c("Healthy", "aPD1"))
 exclude <- grep (paste(c("Subject","TimeCategory","Year","Label","TimePoint.one","Sex","dummy", "Current.Immunotherapy","Cycle.of.Immunotherapy"), collapse="|"), colnames(subsetData), value = F)
-subsetData <- subsetData[, -exclude]
-a <- sapply(subsetData, function (x) { sum(!is.na(x)) } ) 
+subsetData <- subsetData[, -exclude] 
+# subsetData <- subsetData[, -c(100:200)]
+a <- sapply(subsetData, function (x) { sum(!is.na(x)) } )   # take away any columns that are purely NA
 subsetData <- subsetData[, which(a > 2)]
-a <- sapply(subsetData[,2:ncol(subsetData)], function (x) { sum(x, na.rm=T) } )
+a <- sapply(subsetData[,2:ncol(subsetData)], function (x) { sum(x, na.rm=T) } )  # take away all zero columns
 subsetData <- subsetData[, - c(1+which(a == 0, arr.ind = T))]  # add one because the Cohort column was excluded, so a doesn't represent subsetData otherwise
-a <- sapply(subsetData[,2:ncol(subsetData)], function (x) { sd(x, na.rm=T) } )
+a <- sapply(subsetData[,2:ncol(subsetData)], function (x) { sd(x, na.rm=T) } )   # take away all columns with 0 standard deviation
 subsetData <- subsetData[, - c(1+which(a == 0, arr.ind = T))]  # add one because the Cohort column was excluded, so a doesn't represent subsetData otherwise
-a <- scale(subsetData[,2:ncol(subsetData)])
-#  subsetData <- subsetData[, 1:10]
-a <- as.data.frame(a)
-a$Cohort <- subsetData$Cohort
-subsetData <- a
-yvar <- grep("Cohort",colnames(subsetData), value=F)
-train_rows <- sample(1:nrow(subsetData), 0.66*nrow(subsetData))
-x.train <- subsetData[train_rows, -yvar]
-x.test <- subsetData[-train_rows, -yvar]
-y.train <- subsetData[train_rows, yvar]
-y.test <- subsetData[-train_rows, yvar]
-# fit <- cv.glmnet(x.train, y.train, type.measure = "class", alpha=0, family="binomial")  # ridge regression and cross-validation for L2
-# model <- glm(Cohort ~ . , data=subsetData, family = 'binomial')
-
-
-# set.seed(42)
-# n = 1000
-# p = 5000
-# real_p = 15
-# x <- matrix(rnorm(n*p),nrow=n,ncol=p)
-# y <- apply( x[ , 1:real_p], 1, sum) + rnorm(n)
-# train_rows <- sample(1:n, 0.66*n)
-# x.train <- x[train_rows,]
-# x.test <- x[-train_rows,]
-# y.train <- y[train_rows]
-# y.test <- y[-train_rows]
-# alpha0.fit <- cv.glmnet(x.train, y.train, type.measure = "mse", alpha=0, family="gaussian") # ridge regression
-# alpha0.predicted <- predict(alpha0.fit, s=alpha0.fit$lambda.1se, newx = x.test)
-# mean((y.test - alpha0.predicted)^2)
-# alpha1.fit <- cv.glmnet(x.train, y.train, type.measure = "mse", alpha=1, family="gaussian") # lasso regression
-# alpha1.predicted <- predict(alpha1.fit, s=alpha1.fit$lambda.1se, newx = x.test)
-# mean((y.test - alpha1.predicted)^2)
-# alphaQ.fit <- cv.glmnet(x.train, y.train, type.measure = "mse", alpha=0.5, family="gaussian") # mixed regression
-# alphaQ.predicted <- predict(alphaQ.fit, s=alphaQ.fit$lambda.1se, newx = x.test)
-# mean((y.test - alphaQ.predicted)^2)
-# list.of.fits <- list()
-
-# for (i in 0:10) {   fit.name <- paste0("alpha",i/10);    list.of.fits[[fit.name]] <- cv.glmnet(x.train, y.train, type.measure="mse", alpha=i/10, family="gaussian") }
-
-# results <- data.frame()
-# for (i in 0:10) {   fit.name <- paste0("alpha",i/10);   predicted <- predict(list.of.fits[[fit.name]], s=list.of.fits[[fit.name]]$lambda.1se, newx = x.test);
-#  mse <- mean((y.test - predicted)^2) ;  temp <- data.frame(alpha=i/10, mse=mse, fit.name = fit.name);   results <- rbind(results, temp)  }
-
-
-
-
-
-
+a <- subsetData[ , -grep(paste(c("Kd","Plasma","HAI"), collapse="|"),colnames(subsetData), value = F)]   # leave out the serologies columns because not enough paired data  
+a <- a[ -which(is.na(rowSums(a[,-1]) ) ), ]
+set.seed(101)
+train_rows <- sample(1:nrow(a), 0.66*nrow(a))
+y.train <- a$Cohort[train_rows]
+x.train <- as.matrix(a[train_rows, -grep("Cohort",colnames(a), value = F)])
+ytest <- a$Cohort[-train_rows]
+xtest <- as.matrix(a[-train_rows, -grep("Cohort",colnames(a), value = F)])
+list.of.fits <- list()
+for (i in 0:100) {   fit.name <- paste0("alpha",i/100); list.of.fits[[fit.name]] <- cv.glmnet(x.train, y.train, alpha=i/100, family="binomial", standardize=T, nfolds=10) }
+results <- data.frame()
+for (i in 0:100) {   
+  fit.name <- paste0("alpha",i/100);   
+  fit.predicted <- predict(list.of.fits[[fit.name]], s=list.of.fits[[fit.name]]$lambda.1se, newx = xtest, type="class");
+  accuracy <- mean(ytest == fit.predicted) ;  
+  temp <- data.frame(alpha=i/100, accuracy=accuracy);   
+  results <- rbind(results, temp)    }
+ggplot(results, aes(x=alpha, y=accuracy)) + geom_point() + theme_bw() + theme(axis.title = element_text(size=20), axis.text = element_text(size=16), title = element_text(size=24)) + 
+  ggtitle("Accuracy for prediction of test data given model")
+fit <- cv.glmnet(x.train, y.train, alpha=1, family = "binomial", standardize=T, nfolds = 10) 
+coef(fit, fit$lambda.1se)
 
 
 
