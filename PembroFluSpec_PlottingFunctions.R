@@ -98,7 +98,6 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
       theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
             legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white")) 
-      
   )
 }
 
@@ -117,7 +116,7 @@ prePostTimeAveraged <- function(data, title, xLabel, yLabel)
   my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.82, hjust=0, gp=gpar(col="#FFB18C", fontsize=24)))
   
   return(
-    ggplot(data=overTime, aes(x=Group.2, y=Ave, group = Group.3, color=as.factor(Group.3))) + theme_bw() + 
+    ggplot(data=overTime, aes(x=Group.2, y=Ave, group = Group.3, color=as.factor(Group.3))) + theme_bw() +   # group.1 = variable, Group.2 = TimeCategory, Group.3 = Cohort
       geom_ribbon(aes(x=Group.2, ymin=Ave-SE, ymax=Ave+SE, fill=Group.3), alpha=0.1) + 
       geom_line(aes(size=3)) +  
       geom_point(aes(size=4, fill=Group.3), pch=21) + 
@@ -127,8 +126,58 @@ prePostTimeAveraged <- function(data, title, xLabel, yLabel)
       theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
             legend.position = "none")  + annotation_custom(my_grob1) + annotation_custom(my_grob2)
   )
-
 }
+
+
+
+prePostTimeGene <- function(data, xData, yData, fillParam, groupby, title, xLabel, yLabel)
+{
+  targets <- which(table(data$Subject) > 1)
+  subsetData <- data[ which( data$Subject %in% names(targets)   ), ]
+  subsetData <- subsetData[order(subsetData$Subject, subsetData$TimeCategory, decreasing = F),]
+  return(
+    ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
+      geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
+      geom_path(aes_string(group=groupby), color="grey60") + 
+      geom_point(size = 1, color="grey60") + facet_wrap(fillParam ) + 
+      scale_color_manual(values=c("#7FAEDB", "#FFB18C")) + 
+      scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + 
+      ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
+      theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
+            legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white")) 
+  )
+}
+
+
+prePostTimeAveragedGene <- function(data, title, xLabel, yLabel)
+{
+  subsetData <- data
+  overTime <- aggregate( subsetData$value, by= list(subsetData$TimeCategory, subsetData$Cohort), FUN=mean, na.rm = T)
+  overTimeSD <- aggregate( subsetData$value, by= list(subsetData$TimeCategory, subsetData$Cohort), FUN=sd, na.rm = T)
+  overTimeN <- t(as.matrix(table(subsetData$Cohort, subsetData$TimeCategory)))
+  overTimeSD$SE <- overTimeSD$x / sqrt(as.vector(overTimeN[1:4]))
+  overTime$SE <- overTimeSD$SE
+  temp <- colnames(overTime); temp[which(temp == "x")] <- "Ave"; colnames(overTime) <- temp
+  overTime$Group.2 <- factor(overTime$Group.2, levels = c("Healthy","aPD1"))
+  overTime <- overTime[order(overTime$Group.2, decreasing = T),]
+  annotationInfo1 <- "Healthy"  
+  my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.90, hjust=0, gp=gpar(col="#7FAEDB", fontsize=24)))
+  annotationInfo2 <- "aPD1"   
+  my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.82, hjust=0, gp=gpar(col="#FFB18C", fontsize=24)))
+  return(
+    ggplot(data=overTime, aes(x=Group.1, y=Ave, group = Group.2, color=as.factor(Group.2))) + theme_bw() +     # Group.1 = TimeCategory, Group.2 = Cohort
+      geom_ribbon(aes(x=Group.1, ymin=Ave-SE, ymax=Ave+SE, fill=Group.2), alpha=0.1) + 
+      geom_line(aes(size=3)) +   
+      geom_point(aes(size=4, fill=Group.2), pch=21) + 
+      scale_color_manual(values=c("#7FAEDB", "#FFB18C")) +     
+      scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + 
+      ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
+      theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
+            legend.position = "none")   + annotation_custom(my_grob1) + annotation_custom(my_grob2) 
+  )
+}
+
+
 
 volcanoPlot <- function( diffExprData, repelThresh, title, leftLabel, rightLabel )
 {

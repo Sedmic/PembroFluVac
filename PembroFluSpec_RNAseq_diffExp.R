@@ -14,6 +14,8 @@ library("ggpubr")
 library("scales")
 library("gridExtra")
 sessionInfo()
+source('D:/Pembro-Fluvac/Analysis/PembroFluSpec_Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
+
 
 ## ***************************     read in data and make metaData  **************************************
 dataMatrix <- read.table("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/PORTresults/NORMALIZED_DATA/SPREADSHEETS/FINAL_master_list_of_gene_counts_MIN.Fastqs.txt", sep="", 
@@ -21,30 +23,96 @@ dataMatrix <- read.table("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/PORTresul
 rownames(dataMatrix) <- make.names(dataMatrix$geneSymbol, unique=TRUE)
 dataMatrix$id <- dataMatrix$geneCoordinate <- dataMatrix$geneSymbol <- NULL 
 
+makeMetaData <- function( colnVector)
+{ metaData <- data.frame(row.names= colnVector);  metaData$condition <- "empty"
+  metaData$Cohort <- metaData$Subject <- metaData$TimeCategory <- metaData$Subset <- "a"
+  metaData$Cohort[grep("196",rownames(metaData),value=F)] <- "aPD1" ;  metaData$Cohort[grep("FS1819",rownames(metaData),value=F)] <- "Healthy"
+  metaData$TimeCategory[grep("oW",rownames(metaData), value=F)] <- "oneWeek"; metaData$TimeCategory[grep("bL",rownames(metaData), value=F)] <- "baseline"; 
+  metaData$Subset[grep("HiHi",rownames(metaData),value=F)] <- "HiHi_cTfh"; metaData$Subset[grep("ABC",rownames(metaData),value=F)] <- "ABC";
+  metaData$Subset[grep("_PB_",rownames(metaData),value=F)] <- "PB"; metaData$Subset[grep("naiveB",rownames(metaData),value=F)] <- "navB";
+  metaData$Subject <- substr(rownames(metaData), start = 1, stop = 10)
+  metaData$condition <- paste0( metaData$Cohort,"_",metaData$Subset,"_",metaData$TimeCategory)
+  return(metaData)      }
 
-metaData <- data.frame(row.names=colnames(dataMatrix));  metaData$condition <- "empty"
-metaData$Cohort <- metaData$subject <- metaData$TimeCategory <- metaData$Subset <- "a"
-metaData$Cohort[grep("196",rownames(metaData),value=F)] <- "aPD1" ;  metaData$Cohort[grep("FS1819",rownames(metaData),value=F)] <- "Healthy"
-metaData$TimeCategory[grep("oW",rownames(metaData), value=F)] <- "oneWeek"; metaData$TimeCategory[grep("bL",rownames(metaData), value=F)] <- "baseline"; 
-metaData$Subset[grep("HiHi",rownames(metaData),value=F)] <- "HiHi_cTfh"; metaData$Subset[grep("ABC",rownames(metaData),value=F)] <- "ABC";
-metaData$Subset[grep("_PB_",rownames(metaData),value=F)] <- "PB"; metaData$Subset[grep("naiveB",rownames(metaData),value=F)] <- "navB";
-metaData$subject <- substr(rownames(metaData), start = 1, stop = 10)
-metaData$condition <- paste0( metaData$Cohort,"_",metaData$Subset,"_",metaData$TimeCategory)
-
+metaData <- makeMetaData(colnVector = colnames(dataMatrix))
 
 ## ***************************     read in log-transformed data   **************************************
 
 logDataMatrix <- read.csv( file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/logDataMatrix.csv", stringsAsFactors = F, header = 1, row.names = 1)  # created in QC script
 
+# -------------------- global heatmap of relevant/interesting genes  ------------------------
 probeGenes <- logDataMatrix[ c("CXCR5", "PRDM1",  "IFNG","MAF","CCR6","CXCR3","GATA3",
                "BTLA","TNFRSF4", "CD38","TIGIT","POU2AF1","MKI67","SH2D1A", "TOX2", "BIRC5", "TBK1", "CD19","MS4A1","FUT8","ST6GAL1","B4GALT1",
-               "JCHAIN","AICDA", "CMTM6", "AK9", "ZNF770","CD3E","CD4") , ]  # some genes taken from genomicscape.com
+               "JCHAIN","AICDA", "CMTM6", "AK9", "ZNF770","CD3E","CD4", "PAX5") , ]  # some genes taken from genomicscape.com
 
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
+
+
+
+# -------------------- glycosylation genes in ABC ------------------------
+probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1","AICDA") , grep("ABC",colnames(logDataMatrix)) ]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
+         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression - ABC ")
+
+metaX <- makeMetaData( colnames(probeGenes))
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "FUT8",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeAveragedGene(singleGeneData, title = "ABC: FUT8 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+  
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "ST6GAL1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "ST6GAL1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeAveragedGene(singleGeneData, title = "ABC: ST6GAL1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "B4GALT1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "B4GALT1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeAveragedGene(singleGeneData, title = "ABC: B4GALT1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+# -------------------- glycosylation genes in PB ------------------------
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
+probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1") , grep("PB",colnames(logDataMatrix)) ]
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
+         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression - PB ")
+
+metaX <- makeMetaData( colnames(probeGenes))
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "FUT8",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeAveragedGene(singleGeneData, title = "PB: FUT8 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "ST6GAL1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "ST6GAL1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeAveragedGene(singleGeneData, title = "PB: ST6GAL1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "B4GALT1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "B4GALT1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeAveragedGene(singleGeneData, title = "PB: B4GALT1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+
+# -------------------- glycosylation genes in NaiveB  ------------------------
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
+probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1") , grep("naive",colnames(logDataMatrix)) ]
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
+         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression - PB ")
+
+metaX <- makeMetaData( colnames(probeGenes))
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "FUT8",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeAveragedGene(singleGeneData, title = "NaiveB: FUT8 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "ST6GAL1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeAveragedGene(singleGeneData, title = "NaiveB: ST6GAL1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "B4GALT1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeAveragedGene(singleGeneData, title = "NaiveB: B4GALT1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+
+
 
 
 ## ******************************** Differential expression by subgroup and age category *********************************************
@@ -74,7 +142,7 @@ volcanoPlot(navB_AvH_bL, repelThresh = 0.01, title = "navB at oneWeek in aPD1 vs
 probeGenes <- logDataMatrix[ grep(paste(c("RANGAP1$", "PLEC$","^OLR1$","SEMA6B","KIFC3$","IRAK1$","^AES$","^ENG$","VAT1$","CD82$",
                                           "BEX4$","ALKBH4"), collapse="|"), rownames(logDataMatrix), value=F), grep("naive",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -94,7 +162,7 @@ volcanoPlot(navB_AvH_oW, repelThresh = 0.01, title = "navB at oneWeek in aPD1 vs
 probeGenes <- logDataMatrix[ grep(paste(c("EGR3$", "CCNL1$","GZMB$","C3AR1","FCRL6$","QRICH2$","^LCK$","^CD5$","OAS1$","RICTOR$",
                                           "UBR4"), collapse="|"), rownames(logDataMatrix), value=F), grep("naive",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -103,7 +171,7 @@ pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col =
 # --------------------------- NavB in HC at Baseline vs oneWeek --------------------------------
 navB_HC_bL_v_oWmeta <- metaData[ grep("Healthy_navB", metaData$condition),c(1:2,4)]
 navB_HC_bL_v_oWmeta$condition <- factor(navB_HC_bL_v_oWmeta$condition);  navB_HC_bL_v_oWdata <- dataMatrix[ , grep("naiveB", colnames(dataMatrix) ) ]; navB_HC_bL_v_oWdata <- navB_HC_bL_v_oWdata[, grep("FS",colnames(navB_HC_bL_v_oWdata))]
-navB_HC_bL_v_oW <- DESeqDataSetFromMatrix(countData=navB_HC_bL_v_oWdata, colData=navB_HC_bL_v_oWmeta, design = ~condition + subject)   # control for subject
+navB_HC_bL_v_oW <- DESeqDataSetFromMatrix(countData=navB_HC_bL_v_oWdata, colData=navB_HC_bL_v_oWmeta, design = ~condition + Subject)   # control for Subject
 navB_HC_bL_v_oW <- navB_HC_bL_v_oW[idx,]   # keep hard filter from above for consistency
 DESdata_navB_H_bLvoW <- DESeq(navB_HC_bL_v_oW, parallel=TRUE)
 
@@ -114,7 +182,7 @@ volcanoPlot(navB_H_bL_v_oW, repelThresh = 0.05, title = "NavB in Healthy at bL v
 probeGenes <- logDataMatrix[ grep(paste(c("KIAA1683", "GPER1","NR4A3","PMEPA1","CD83","^ID1$","^FOS$","^JUN$","SIGLEC1$","^IER2$",
                                           "^FAM83D$","NR4A2","^ID3$","KLHDC8B"), collapse="|"), rownames(logDataMatrix), value=F), grep("naive",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -123,7 +191,7 @@ pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col =
 # --------------------------- NavB in aPD1 at Baseline vs oneWeek --------------------------------
 navB_A_bL_voWmeta <- metaData[ grep("aPD1_navB", metaData$condition),c(1:2,4)]
 navB_A_bL_voWmeta$condition <- factor(navB_A_bL_voWmeta$condition);  navB_A_bL_voWdata <- dataMatrix[ , grep("naiveB", colnames(dataMatrix) ) ]; navB_A_bL_voWdata <- navB_A_bL_voWdata[, grep("19616",colnames(navB_A_bL_voWdata))]
-navB_A_bL_voW <- DESeqDataSetFromMatrix(countData=navB_A_bL_voWdata, colData=navB_A_bL_voWmeta, design = ~condition)   # cannot control for subject
+navB_A_bL_voW <- DESeqDataSetFromMatrix(countData=navB_A_bL_voWdata, colData=navB_A_bL_voWmeta, design = ~condition)   # cannot control for Subject
 navB_A_bL_voW <- navB_A_bL_voW[idx,]   # keep hard filter from above for consistency
 DESdata_navB_A_bLvoW <- DESeq(navB_A_bL_voW, parallel=TRUE)
 
@@ -133,7 +201,7 @@ volcanoPlot(navB_A_bL_v_oW, repelThresh = 0.05, title = "NavB in aPD1 at bL vs o
 probeGenes <- logDataMatrix[ grep(paste(c("KIAA1683", "GPER1","NR4A3","PMEPA1","CD83","^ID1$","^FOS$","^JUN$","SIGLEC1$","^IER2$",
                                           "^FAM83D$","NR4A2","^ID3$","KLHDC8B"), collapse="|"), rownames(logDataMatrix), value=F), grep("naive",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -153,7 +221,7 @@ volcanoPlot(HiHi_AvH_bL, repelThresh = 0.10, title = "HiHi at oneWeek in aPD1 vs
 probeGenes <- logDataMatrix[ grep(paste(c("TACC3$", "TXNIP","BIN2$","EREG$","GNG4$","^IL1R1$","^FYB$","IL27RA","FOXP3","FGFR1$",
                                           "CTLA4$","RASA3$","TUBB1$","^BCL2$"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -175,7 +243,7 @@ volcanoPlot(HiHi_AvH_oW, repelThresh = 0.15, title = "HiHi at oneWeek in aPD1 vs
 probeGenes <- logDataMatrix[ grep(paste(c("MKI67$", "HELLS","GGCT","PMM1","PCSK7","^GK$","^OASL$","TNFRSF1B","OASL","UGDH$",
                                           "TMEM71","RALBP1","ORAI2","CKAP2L"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -195,7 +263,7 @@ volcanoPlot(PB_AvH_bL, repelThresh = 0.15, title = "PB at baseline in aPD1 vs He
 probeGenes <- logDataMatrix[ grep(paste(c("ZNF44$", "^SDPR$","CH25H$","CXCR1$","IFIT2$","PEG13$","^FOS$","UNC119$","DOCK9$","^SNN$",
                                           "S1PR5","IGHV2.70.1"), collapse="|"), rownames(logDataMatrix), value=F), grep("PB",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -215,7 +283,7 @@ volcanoPlot(PB_AvH_oW, repelThresh = 0.15, title = "PB at oneWeek in aPD1 vs Hea
 probeGenes <- logDataMatrix[ grep(paste(c("CD6$", "SLBP$","GNAI2$","STK17A","PNRC1$","DYRK2$","^DUSP1$","KLF3$","B3GNT2$","HEBP2$",
                                           "PNRC1","SNX20","IGLV9.49"), collapse="|"), rownames(logDataMatrix), value=F), grep("PB",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -236,7 +304,7 @@ volcanoPlot(ABC_AvH_oW, repelThresh = 0.05, title = "ABC at oneWeek in aPD1 vs H
 probeGenes <- logDataMatrix[ grep(paste(c("RPP40$", "ZSCAN22$","NTHL1$","RARRES3","MRPL10$","MGEA5$","^CCNL2$","NKTR$","COG6$","DDX39A$",
                                           "GOLGB1","SREK1","IGKV2.29"), collapse="|"), rownames(logDataMatrix), value=F), grep("ABC",colnames(logDataMatrix),value=F)]
 
-annotation <- metaData[ , -grep(paste(c("condition","subject"),collapse="|"),colnames(metaData),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
@@ -299,10 +367,12 @@ pathwaysIPA <- read.csv("Reports/HiHi_AvH_oW_canonical.txt", sep="\t",header=T) 
 pathwaysIPA <- pathwaysIPA[order(pathwaysIPA$z.score, decreasing=F),]  # positive z scores mean enrichment for the POSITIVE stat from DiffExp so aPD1 here
 
 pathwaysIPA_filter <- pathwaysIPA[ which(pathwaysIPA$z.score < -2.5 | pathwaysIPA$z.score > 1), -5]
-plotIPAlollipop( pathwaysIPA_filter, title = "Ingenuity Pathway: HiHi AvH oneWeek", leftLabel = "Enrich for Healthy", rightLabel = "Enrich for aPD1")
+plotIPAlollipop( pathwaysIPA_filter, title = "Ingenuity Canonical: HiHi AvH oneWeek", leftLabel = "Enrich for Healthy", rightLabel = "Enrich for aPD1")
   
 upstreamIPA <- read.csv("Reports/HiHi_AvH_oW_upstream.txt", sep="\t", header=T)
-upstreamIPA_filter <- upstreamIPA[ which(upstreamIPA$Activation.z.score < -3 | upstreamIPA$Activation.z.score > 3), -c(8:9)]
+upstreamIPA_filter <- upstreamIPA[ which(upstreamIPA$Activation.z.score < -3.8 | upstreamIPA$Activation.z.score > 3), -c(8:9)]
+names(upstreamIPA_filter)[5] <- "z.score"
+plotIPAlollipop( upstreamIPA_filter, title = "Ingenuity UpstreamPred: HiHi AvH oneWeek", leftLabel = "Predict for Healthy", rightLabel = "Predict for aPD1")
 
 
 setwd(workingDir)
