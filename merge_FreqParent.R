@@ -107,6 +107,10 @@ for (i in 1:length(files))
   temp$BflowBatch = i
   mergeDataYr3 <- rbind(mergeDataYr3, temp)
 }
+rownames(mergeDataYr3)[grep("-32_d21", rownames(mergeDataYr3))] <- "PBMCs_19616-032_d21_030.fcs"
+rownames(mergeDataYr3)[grep("-31_d41", rownames(mergeDataYr3))] <- "PBMCs_19616-031_d41_003.fcs"
+
+
 
 # *************************************************************************
 # incomplete, need to rationally extract B cell data from year 2 and year 1
@@ -244,4 +248,187 @@ setwd(a)
 
 
 # -------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#  -------------------------------------  MERGE AND CONCATENATE B MFI DATA --------------------------------------------------
+a <- getwd()
+setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/Analysis/medFI/")
+files <-   list.files("./", pattern=').csv$', full=F)
+mergeDataYr3 <- read.csv(file = "medianFI.csv", stringsAsFactors = F, header = T, row.names = 1)
+mergeDataYr3$BmfiBatch = "0"
+
+for (i in 1:length(files))
+{
+  temp <- read.csv(files[i], stringsAsFactors = F, header=T, row.names=1)
+  temp$BmfiBatch = i
+  mergeDataYr3 <- rbind(mergeDataYr3, temp)
+}
+rownames(mergeDataYr3)[grep("-32_d21", rownames(mergeDataYr3))] <- "PBMCs_19616-032_d21_030.fcs"
+rownames(mergeDataYr3)[grep("-31_d41", rownames(mergeDataYr3))] <- "PBMCs_19616-031_d41_003.fcs"
+
+
+# *************************************************************************
+# incomplete, need to rationally extract B cell data from year 2 and year 1
+# *************************************************************************
+
+# mergeData <- mergeDataYr3 
+
+cleanColumnNames <- function (mergeData)
+{
+  mergeData <- mergeData[-grep(pattern="Mean", rownames(mergeData)),]
+  mergeData <- mergeData[-grep(pattern="SD", rownames(mergeData)),]
+  mergeData <- mergeData[,-which(colnames(mergeData) == "X.1")]
+  
+  temp <- rownames(mergeData); temp <- str_replace(temp, "PBMCs_", ""); 
+  temp <- substr(temp, 1, nchar(temp)-8)   # clean up rownames a bit
+  rownames(mergeData) <- temp
+  # add columns for Cohort, Subject, TimePoint (numeric), TimeCategory (categorical), and Year
+  mergeData$Label <- rownames(mergeData)
+  mergeData$Subject <- word(mergeData$Label,1,sep = "\\_")  # take first chunk prior to _ character
+  mergeData$Cohort <- 0;  
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "19")] <- "aPD1";  
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "FS")] <- "Healthy"; 
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "20")] <- "nonPD1"
+  mergeData$TimePoint <- as.numeric(word(mergeData$Label,2,sep= "d"))  # parse out the number of days since vaccination
+  mergeData$TimeCategory <- "a"
+  mergeData$TimeCategory[which(mergeData$TimePoint == 0)] <- "baseline";  
+  mergeData$TimeCategory[which(mergeData$TimePoint > 0 & mergeData$TimePoint <= 14)] <- "oneWeek"; 
+  mergeData$TimeCategory[which(mergeData$TimePoint > 14)] <- "late"
+  
+  
+  temp <- colnames(mergeData)
+  temp <- str_replace(temp,"Median..", "medfi-")
+  temp <- str_replace(temp,"Lymphocytes.Singlets.Live.CD14.CD4..CD19..", "CD19_")
+  temp <- str_replace(temp,"CD19_NonnaiveB.IgD.CD71..ActBCells", "ActBCells")
+  temp <- str_replace(temp,"CD19_NonnaiveB.IgD.CD71..CD20loCD71hi", "CD20loCD71hi")
+  temp <- str_replace(temp,"CD19_NonnaiveB.IgD.CD71..", "IgDloCD71hi")
+  
+  
+  colnames(mergeData) <- temp
+  return(mergeData)  
+}
+Yr3data <- cleanColumnNames(mergeDataYr3);  Yr3data$Year <- 3
+which(sapply(Yr3data, class) == "character")
+# combinedYrs <- merge(x=Yr3data, y=Yr2data, all=T)
+
+# write.csv(Yr3data, file = "../mergeData_Bmfi.csv")   # year 3 only
+# write.csv(Yr3data, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_Bmfi_allyrs.csv")    # all years combined
+rm(mergeDataYr3)
+setwd(a) 
+
+# -------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#  -------------------------------------  MERGE AND CONCATENATE T from B CELL PANEL --------------------------------------------------
+a <- getwd()
+setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/Analysis/TfhAnalyses/")
+files <-   list.files("./", pattern=').csv$', full=F)
+mergeDataYr3 <- read.csv(file = "TfhAnalyses.csv", stringsAsFactors = F, header = T, row.names = 1)
+mergeDataYr3$TfromBBatch = "0"
+
+for (i in 1:length(files))
+{
+  temp <- read.csv(files[i], stringsAsFactors = F, header=T, row.names=1)
+  temp$TfromBBatch = i
+  mergeDataYr3 <- rbind(mergeDataYr3, temp)
+}
+rownames(mergeDataYr3)[grep("-32_d21", rownames(mergeDataYr3))] <- "PBMCs_19616-032_d21_030.fcs"
+rownames(mergeDataYr3)[grep("-31_d41", rownames(mergeDataYr3))] <- "PBMCs_19616-031_d41_003.fcs"
+
+# *************************************************************************
+# incomplete, need to rationally extract B cell data from year 2 and year 1
+# *************************************************************************
+
+# mergeData <- mergeDataYr3 
+
+cleanColumnNames <- function (mergeData)
+{
+  mergeData <- mergeData[-grep(pattern="Mean", rownames(mergeData)),]
+  mergeData <- mergeData[-grep(pattern="SD", rownames(mergeData)),]
+  mergeData <- mergeData[,-which(colnames(mergeData) == "X.1")]
+  
+  temp <- rownames(mergeData); temp <- str_replace(temp, "PBMCs_", ""); 
+  temp <- substr(temp, 1, nchar(temp)-8)   # clean up rownames a bit
+  rownames(mergeData) <- temp
+  # add columns for Cohort, Subject, TimePoint (numeric), TimeCategory (categorical), and Year
+  mergeData$Label <- rownames(mergeData)
+  mergeData$Subject <- word(mergeData$Label,1,sep = "\\_")  # take first chunk prior to _ character
+  mergeData$Cohort <- 0;  
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "19")] <- "aPD1";  
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "FS")] <- "Healthy"; 
+  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "20")] <- "nonPD1"
+  mergeData$TimePoint <- as.numeric(word(mergeData$Label,2,sep= "d"))  # parse out the number of days since vaccination
+  mergeData$TimeCategory <- "a"
+  mergeData$TimeCategory[which(mergeData$TimePoint == 0)] <- "baseline";  
+  mergeData$TimeCategory[which(mergeData$TimePoint > 0 & mergeData$TimePoint <= 14)] <- "oneWeek"; 
+  mergeData$TimeCategory[which(mergeData$TimePoint > 14)] <- "late"
+  
+  
+  temp <- colnames(mergeData)
+  temp <- str_replace(temp,"Median..Comp.820_60.UV.A", "_medfi-CD20")
+  temp <- str_replace(temp,"Median..Comp.800_30.Violet.A", "_medfi-Ki67")
+  temp <- str_replace(temp,"Median..Comp.780_60.YG.A", "_medfi-Tbet")
+  temp <- str_replace(temp,"Median..Comp.780_60.Red.A", "_medfi-CD80")
+  temp <- str_replace(temp,"Median..Comp.780_60.Blue.A", "_medfi-CD23")
+  temp <- str_replace(temp,"Median..Comp.750_30.Violet.A", "_medfi-CD4")
+  temp <- str_replace(temp,"Median..Comp.740_35.UV.A", "_medfi-CD16")
+  temp <- str_replace(temp,"Median..Comp.730_45.Red.A", "_medfi-CXCR5")
+  temp <- str_replace(temp,"Median..Comp.710_50.YG.A", "_medfi-CD14")
+  temp <- str_replace(temp,"Median..Comp.710_50.Violet.A", "_medfi-CD21")
+  temp <- str_replace(temp,"Median..Comp.710_50.Blue.A", "_medfi-CD19")
+  temp <- str_replace(temp,"Median..Comp.660_20.Red.A", "_medfi-Blimp1")
+  temp <- str_replace(temp,"Median..Comp.660_40.YG.A", "_medfi-CXCR4")
+  temp <- str_replace(temp,"Median..Comp.660_20.Violet.A", "_medfi-CD71")
+  temp <- str_replace(temp,"Median..Comp.660_20.UV.A", "_medfi-CD11c")
+  temp <- str_replace(temp,"Median..Comp.610_20.YG.A", "_medfi-CD38")
+  temp <- str_replace(temp,"Median..Comp.610_20.Violet.A", "_medfi-CD138")
+  temp <- str_replace(temp,"Median..Comp.586_15.YG.A", "_medfi-CD86")
+  temp <- str_replace(temp,"Median..Comp.586_15.Violet.A", "_medfi-Dead")
+  temp <- str_replace(temp,"Median..Comp.586_15.UV.A", "_medfi-CD25")
+  temp <- str_replace(temp,"Median..Comp.515_30.UV.A", "_medfi-CD3")
+  temp <- str_replace(temp,"Median..Comp.515_20.Violet.A", "_medfi-IgM")
+  temp <- str_replace(temp,"Median..Comp.515_20.Blue.A", "_medfi-CD32")
+  temp <- str_replace(temp,"Median..Comp.470_15.Violet.A", "_medfi-IgD")  
+  temp <- str_replace(temp,"Median..Comp.450_50.Violet.A", "_medfi-Bcl6")  
+  temp <- str_replace(temp,"Median..Comp.379_28.UV.A", "_medfi-CD27")  
+    
+  
+  temp <- str_replace(temp,"Lymphocytes.Singlets.Live.CD4..CD3..CXCR5..CD38.Ki67....", "Ki67hiCD38hicTfh")
+  colnames(mergeData) <- temp
+  return(mergeData)  
+}
+Yr3data <- cleanColumnNames(mergeDataYr3);  Yr3data$Year <- 3
+
+# combinedYrs <- merge(x=Yr3data, y=Yr2data, all=T)
+
+
+# write.csv(Yr3data, file = "../mergeData_TfhAnalyses.csv")   # year 3 only
+# write.csv(Yr3data, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_TmfiFromB_allyrs.csv")    # all years combined
+rm(mergeDataYr3)
+setwd(a) 
+
+# -------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -56,18 +56,19 @@ ggplot(data = scores, aes(x = PC3, y = PC4, color = Cohort)) + theme_bw() +
 ## ***************************     Log transformation  **************************************
 
 metaData <- data.frame(row.names=colnames(dataMatrix));  metaData$condition <- "empty"
-metaData$Cohort <- metaData$subject <- metaData$TimeCategory <- metaData$Subset <- "a"
+metaData$Cohort <- metaData$Subject <- metaData$TimeCategory <- metaData$Subset <- "a"
 metaData$Cohort[grep("196",rownames(metaData),value=F)] <- "aPD1" ;  metaData$Cohort[grep("FS1819",rownames(metaData),value=F)] <- "Healthy"
 metaData$TimeCategory[grep("oW",rownames(metaData), value=F)] <- "oneWeek"; metaData$TimeCategory[grep("bL",rownames(metaData), value=F)] <- "baseline"; 
 metaData$Subset[grep("HiHi",rownames(metaData),value=F)] <- "HiHi_cTfh"; metaData$Subset[grep("ABC",rownames(metaData),value=F)] <- "ABC";
 metaData$Subset[grep("_PB_",rownames(metaData),value=F)] <- "PB"; metaData$Subset[grep("naiveB",rownames(metaData),value=F)] <- "navB";
-metaData$subject <- substr(rownames(metaData), start = 8, stop = 10)
+metaData$Subject <- substr(rownames(metaData), start = 8, stop = 10)
 metaData$condition <- paste0( metaData$Cohort,"_",metaData$Subset,"_",metaData$TimeCategory)
 
 fullDataset <- DESeqDataSetFromMatrix(countData=dataMatrix, colData=metaData, design= ~ condition)
 
-vsd <- varianceStabilizingTransformation(fullDataset)
-logDataMatrix <- as.data.frame(assay(vsd))
+# vsd <- varianceStabilizingTransformation(fullDataset)
+# logDataMatrix <- as.data.frame(assay(vsd))
+
 # write.csv(logDataMatrix, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/logDataMatrix.csv")
 # logDataMatrix <- read.csv( file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/logDataMatrix.csv", stringsAsFactors = F, header = 1)
 
@@ -75,7 +76,7 @@ logDataMatrix <- as.data.frame(assay(vsd))
 ## ***************************     tSNE projection  **************************************
 
 set.seed(42)
-tsneMap <- Rtsne(t(logDataMatrix),epoch=50,perplexity=6,k=2,theta=0,verbosity=TRUE,max_iter=1000)
+tsneMap <- Rtsne(t(logDataMatrix),epoch=50,perplexity=10,theta=0,verbosity=TRUE,max_iter=5000)
 tsneMap <- as.data.frame(tsneMap$Y); tsneMap$subgroup <- metaData$condition; rownames(tsneMap) <- colnames(logDataMatrix)
 tsneMap$Cohort <- metaData$Cohort; tsneMap$Subset <- metaData$Subset; tsneMap$TimeCategory <- metaData$TimeCategory
 tsneMap$Subset <- factor(tsneMap$Subset, levels = c("ABC", "HiHi_cTfh","navB","PB" ))
@@ -84,22 +85,26 @@ tsneMap$Cohort <- factor(tsneMap$Cohort, levels = c("Healthy","aPD1" ))
 customPalette <- colorRampPalette(brewer.pal(12,"Paired"))(12)
 
 ggplot(tsneMap, aes(x=V1, y=V2)) + 
-  geom_point(size=10,pch=21,colour="black", aes(fill= Subset )) +  
-  xlab("") + ylab("") +   ggtitle("t-SNE All samples") +  theme_light(base_size=15)  +  #scale_fill_manual(values=customPalette[unique(tsneReorder$Class)]) +
-  theme(strip.background = element_blank()) + labs(fill = "Sample cohort") + theme(legend.key = element_blank()) +
+  geom_point(size=10,pch=21,colour="black", aes(fill= Subset )) +                                     # color by subset
+  xlab("") + ylab("") +   ggtitle("t-SNE - By lymphocyte subset") +  theme_light(base_size=24)  + 
+  theme(strip.background = element_blank()) + labs(fill = "Sample cohort", legend.key = element_blank()) +
   guides(colour=guide_legend(override.aes=list(size=8))) #+ xlim(-60,60) + ylim(-55,70)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorBySubset.pdf", device="pdf")
 
 ggplot(tsneMap, aes(x=V1, y=V2)) + 
-  geom_point(size=10,pch=21,colour="black", aes(fill=TimeCategory)) +  
-  xlab("") + ylab("") +   ggtitle("t-SNE All samples") +  theme_light(base_size=15)  +  #scale_fill_manual(values=customPalette[unique(tsneReorder$Class)]) +
-  theme(strip.background = element_blank()) + labs(fill = "Sample cohort") + theme(legend.key = element_blank()) +
+  geom_point(size=10,pch=21,colour="black", aes(fill=TimeCategory)) +                                      # color by TimeCategory
+  xlab("") + ylab("") +   ggtitle("t-SNE - By time after vaccine") +  theme_light(base_size=24)  +  
+  theme(strip.background = element_blank()) + labs(fill = "Time Category", legend.key = element_blank()) +
   guides(colour=guide_legend(override.aes=list(size=8))) #+ xlim(-60,60) + ylim(-55,70)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorByTimeCategory.pdf", device="pdf")
+
 
 ggplot(tsneMap, aes(x=V1, y=V2)) + 
-  geom_point(size=10,pch=21,colour="black", aes(fill=Cohort )) +  
-  xlab("") + ylab("") +   ggtitle("t-SNE All samples") +  theme_light(base_size=15)  +  #scale_fill_manual(values=customPalette[unique(tsneReorder$Class)]) +
-  theme(strip.background = element_blank()) + labs(fill = "Sample cohort") + theme(legend.key = element_blank()) +
+  geom_point(size=10,pch=21,colour="black", aes(fill=Cohort )) +                                      # color by Cohort
+  xlab("") + ylab("") +   ggtitle("t-SNE - By cohort") +  theme_light(base_size=24)  + 
+  theme(strip.background = element_blank()) + labs(fill = "Sample cohort", legend.key = element_blank()) +
   guides(colour=guide_legend(override.aes=list(size=8))) #+ xlim(-60,60) + ylim(-55,70)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorByCohort.pdf", device="pdf")
 
 
 

@@ -10,7 +10,6 @@ library("Rtsne")
 library("pheatmap")
 library("tools")
 library("viridis")
-library("ggpubr")
 library("scales")
 library("gridExtra")
 sessionInfo()
@@ -119,13 +118,13 @@ prePostTimeAveragedGene(singleGeneData, title = "NaiveB: B4GALT1 transcripts", x
 
 library("BiocParallel")
 register(SnowParam(10))
- 
+metaData <- makeMetaData(colnVector = colnames(dataMatrix))
 fullDataset <- DESeqDataSetFromMatrix(countData=dataMatrix, colData=metaData, design= ~ condition)
 dds <- estimateSizeFactors(fullDataset);   idx <- rowSums( counts(dds, normalized=TRUE) >= 10 ) > 20  # hard filter for genes with at least 20 counts in 25% of samples
 fullDataset <- fullDataset[idx,]
 # DESdata_fullDataset <- DESeq(fullDataset, parallel=TRUE)
 # approach of using full metaData with ~ condition keeps failing so will switch to simpler statistical models
-dataMatrixFiltered <- dataMatrix[idx,]
+# dataMatrixFiltered <- dataMatrix[idx,]
 
 
 # --------------------------- NavB in aPD1 vs HC baseline --------------------------------
@@ -206,6 +205,35 @@ ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
 
+
+
+
+# --------------------------- PB vs naiveB at baseline   --------------------------------
+
+meta <- metaData[ grep(paste0(c("PB_bL", "naiveB_bL"), collapse="|"), rownames(metaData)),1:4]
+meta$condition <- factor(meta$condition);  data <- dataMatrix[ , grep(paste0(c("PB_bL", "naiveB_bL"), collapse="|"), colnames(dataMatrix) ) ]
+PB_v_nav_bL <- DESeqDataSetFromMatrix(countData=data, colData=meta, design = ~Subset + Subject)
+PB_v_nav_bL <- PB_v_nav_bL[idx,]   # keep hard filter from above for consistency
+DESdata_PBvNav_AH_bL <- DESeq(PB_v_nav_bL, parallel=TRUE)
+
+PBvNav_AH_bL <- as.data.frame(results(DESdata_PBvNav_AH_bL, contrast = c("Subset", "PB", "navB") ))  # pos stats = first elem in comparison
+#write.csv(PBvNav_AH_bL, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/PBvNav_AH_bL.csv")
+volcanoPlot(PBvNav_AH_bL, repelThresh = 1e-50, title = "PB vs navB", leftLabel = "NaiveB", rightLabel = "PB" )
+
+# --------------------------- ABC vs naiveB at baseline   --------------------------------
+
+meta <- metaData[ grep(paste0(c("ABC_bL", "naiveB_bL"), collapse="|"), rownames(metaData)),1:4]
+meta$condition <- factor(meta$condition);  data <- dataMatrix[ , grep(paste0(c("ABC_bL", "naiveB_bL"), collapse="|"), colnames(dataMatrix) ) ]
+ABC_v_nav_bL <- DESeqDataSetFromMatrix(countData=data, colData=meta, design = ~Subset + Subject)
+ABC_v_nav_bL <- ABC_v_nav_bL[idx,]   # keep hard filter from above for consistency
+DESdata_ABCvNav_AH_bL <- DESeq(ABC_v_nav_bL, parallel=TRUE)
+
+ABCvNav_AH_bL <- as.data.frame(results(DESdata_ABCvNav_AH_bL, contrast = c("Subset", "ABC", "navB") ))  # pos stats = first elem in comparison
+#write.csv(ABCvNav_AH_bL, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/ABCvNav_AH_bL.csv")
+volcanoPlot(ABCvNav_AH_bL, repelThresh = 1e-30, title = "ABC vs navB", leftLabel = "NaiveB", rightLabel = "ABC" )
+
+
+
 # --------------------------- HiHi in aPD1 vs HC   baseline  --------------------------------
 
 HiHi_aPD1_v_HC_bLmeta <- metaData[ grep("HiHi_bL", rownames(metaData)),1:2]
@@ -241,12 +269,23 @@ HiHi_AvH_oW <- as.data.frame(results(DESdata_HiHi_AvH_oW, contrast = c("conditio
 volcanoPlot(HiHi_AvH_oW, repelThresh = 0.15, title = "HiHi at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
 
 probeGenes <- logDataMatrix[ grep(paste(c("MKI67$", "HELLS","GGCT","PMM1","PCSK7","^GK$","^OASL$","TNFRSF1B","OASL","UGDH$",
-                                          "TMEM71","RALBP1","ORAI2","CKAP2L"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
+                                          "TMEM71","RALBP1","ORAI2","CKAP2L", "PRDM1$"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
 
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
+         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression", border_color = NA
+#        , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_diffExp_heatmap.pdf", device="pdf"
+         )
+dev.off()
+
+metaX <- makeMetaData(colnames(probeGenes)); 
+probeGenes <- logDataMatrix[ grep(paste(c("BCL6$", "PRDM1$"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
+
+data <- merge(metaX, y=t(probeGenes), by=0) ; data <- data[data$TimeCategory == "oneWeek", ]
+data$Cohort <- factor(data$Cohort, levels=c("Healthy","aPD1"))
+twoSampleBox(data[, c("TimeCategory","Cohort","BCL6")], xData = "Cohort", yData = "BCL6", fillParam = "Cohort", title = "PRDM1 in +/+ cTfh", yLabel = "log2 counts")
+
 
 # --------------------------- PB in aPD1 vs HC   baseline  --------------------------------
 
@@ -324,13 +363,14 @@ setwd(dir = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression
 pathwayPos <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/gsea_report_for_na_pos_1573243350115.xls", sep="\t")
 pathwayNeg <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/gsea_report_for_na_neg_1573243350115.xls", sep="\t")
 mergeResults <- rbind(pathwayPos, pathwayNeg)
-plotGSEAlollipop( mergeResults, title = "Hallmark genesets: HiHi AvH at oneWeek", leftLabel = "Enrich for Healthy", rightLabel = "Enrich for aPD1")
-
+plotGSEAlollipop( mergeResults, title = "Hallmark: HiHi AvH at oW", leftLabel = "Healthy", rightLabel = "aPD1")
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPathways_oW.pdf", device="pdf", width=7, height=9)
 
 # IL-2 stat5 pathway 
 singlePathway <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_IL2_STAT5_SIGNALING.xls", sep="\t")
-plotGSEAtraditional(singlePathway, pathwayName = "IL2", title = "Hallmark IL2-STAT5 signaling: HiHi AvH at oneWeek", leftLabel = "Enrich for aPD1", rightLabel = "Enrich for Healthy", cohortCompare =T)
-  
+plotGSEAtraditional(singlePathway, pathwayName = "IL2", title = "IL2-STAT5 signaling: HiHi AvH at oW", leftLabel = "Enrich for aPD1", rightLabel = "Enrich for Healthy", cohortCompare =T)
+ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPahtways_IL2STAT5_oW.pdf", device="pdf")  
+
 # TNF-NFkB
 singlePathway <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_TNFA_SIGNALING_VIA_NFKB.xls", sep="\t")
 plotGSEAtraditional(singlePathway, pathwayName = "TNF", title = "Hallmark TNF-NFkB signaling: HiHi AvH at oneWeek", leftLabel = "Enrich for aPD1", rightLabel = "Enrich for Healthy", cohortCompare =T)
