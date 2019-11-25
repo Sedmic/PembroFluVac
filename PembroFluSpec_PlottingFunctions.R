@@ -27,16 +27,95 @@ twoSampleBox <- function (data, xData, yData, fillParam, title, yLabel)
   }
   if (pValue >= 0.01)
   {
-    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")
+    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: \n[",CI[1], ", ",CI[2], "]")
   }
-  my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.92, hjust=0, gp=gpar(col="black", fontsize=28)))
+  my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.85, hjust=0, gp=gpar(col="black", fontsize=28)))
   return (
     ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
-      geom_boxplot(outlier.shape = NA) + geom_jitter(size=5, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
+      geom_boxplot(outlier.shape = NA) + geom_jitter(size=7, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
       ggtitle(title) + ylab(yLabel) +  
       theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
       annotation_custom(my_grob) + theme(legend.position = "none")     )
 }
+
+twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
+{
+  set.seed(101)
+  fit <- lm(data[,yData] ~ data[,xData])
+  pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
+  if (pValue < 0.01)
+  {
+    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1), "\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")
+  }
+  if (pValue >= 0.01)
+  {
+    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: \n[",CI[1], ", ",CI[2], "]")
+  }
+  my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.85, hjust=0, gp=gpar(col="black", fontsize=28)))
+  
+  if( ! is.factor(data[,xData])) {  data[,xData] <- factor(data[,xData])    }
+  for (i in 1:length(levels(data[,xData])))
+  {
+    data[, paste(levels(data[,xData])[i])] <- mean(data[which(data[,xData] == levels(data[,xData])[i]), yData], na.rm=T)   # now mean calculated for each level of xData
+  }
+  
+  overTime <- aggregate( x = data[,yData], by= list(variable = data$variable, TimeCategory = data$TimeCategory, Cohort = data$Cohort), FUN=mean, na.rm = T)
+  names(overTime)[which(names(overTime) == 'x')] <- yData
+  
+  # ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+  #  stat_summary(data=data, fun.y = 'mean', geom="bar")  + geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.1)) + 
+  #  ggtitle(title) + ylab(yLabel) +  theme_bw() +  theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
+  #  annotation_custom(my_grob) + theme(legend.position = "none") 
+  
+  return (
+    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+      geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+      geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.1)) + 
+      ggtitle(title) + ylab(yLabel) +  theme_bw() +
+      theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
+      annotation_custom(my_grob) + theme(legend.position = "none")
+  )
+}
+
+twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel)
+{
+  set.seed(101)
+  fit <- lm(data[,yData] ~ data[,xData])
+  pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
+  if (! is.nan(pValue) )
+  {
+    if (pValue < 0.01)
+      {    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1), "\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")     }
+    if (pValue >= 0.01)
+    {    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: \n[",CI[1], ", ",CI[2], "]")      }
+  }
+  
+  my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.85, hjust=0, gp=gpar(col="black", fontsize=28)))
+  
+  if( ! is.factor(data[,xData])) {  data[,xData] <- factor(data[,xData])    }
+  for (i in 1:length(levels(data[,xData])))
+  {
+    data[, paste(levels(data[,xData])[i])] <- mean(data[which(data[,xData] == levels(data[,xData])[i]), yData], na.rm=T)   # now mean calculated for each level of xData
+  }
+  
+  overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T)
+  names(overTime)[which(names(overTime) == 'x')] <- yData
+  
+  # ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+  #  stat_summary(data=data, fun.y = 'mean', geom="bar")  + geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.1)) + 
+  #  ggtitle(title) + ylab(yLabel) +  theme_bw() +  theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
+  #  annotation_custom(my_grob) + theme(legend.position = "none") 
+  
+  return (
+    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+      geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+      geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.1)) + 
+      ggtitle(title) + ylab(yLabel) +  theme_bw() +
+      theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
+      annotation_custom(my_grob) + theme(legend.position = "none")
+  )
+}
+
 
 
 univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
@@ -45,7 +124,7 @@ univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
   pValue <- cor.test(data[,xData], data[,yData], method="pearson")
   if (pValue$p.value < 0.01)   {    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", formatC(pValue$p.value, format="e", digits=1))    }
   if (pValue$p.value >= 0.01) {    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", round(pValue$p.value,2))   }
-  my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))
+  my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))
   return (
     ggplot(data ) + 
       geom_smooth(aes_string(x=xData, y=yData, color=fillParam, fill=fillParam), method='lm') + 
@@ -89,7 +168,7 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
 {
   targets <- which(table(data$Subject) > 1)
   subsetData <- data[ which( data$Subject %in% names(targets)   ), ]
-  subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint.one, decreasing = F),]
+  subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
   return(
     ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
       geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
@@ -106,6 +185,7 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
 prePostTimeAveraged <- function(data, title, xLabel, yLabel)
 {
   subsetData <- data
+  subsetData <- subsetData[ which( !is.na(subsetData$value) ),]
   overTime <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=mean, na.rm = T)
   overTimeSD <- aggregate( subsetData$value, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=sd, na.rm = T)
   overTimeN <- t(as.matrix(table(subsetData$Cohort, subsetData$TimeCategory)))
@@ -125,8 +205,8 @@ prePostTimeAveraged <- function(data, title, xLabel, yLabel)
       scale_color_manual(values=c("#7FAEDB", "#FFB18C")) +     
       scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + 
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
-      theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5), 
-            legend.position = "none")  + annotation_custom(my_grob1) + annotation_custom(my_grob2)
+      theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=32,hjust = 0.5), plot.title = element_text(size=36,hjust = 0.5), 
+            axis.text.x = element_text(angle = 45, hjust=1), legend.position = "none")  + annotation_custom(my_grob1) + annotation_custom(my_grob2)
   )
 }
 
@@ -184,13 +264,14 @@ prePostTimeAveragedGene <- function(data, title, xLabel, yLabel)
 volcanoPlot <- function( diffExprData, repelThresh, title, leftLabel, rightLabel )
 {
   data <- diffExprData[which(diffExprData$lfcSE<2),]     # filter out very high SE which may be outliers
-  left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
-  right_grob <- grobTree(textGrob(rightLabel, x=0.9,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
+  left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=18)))
+  right_grob <- grobTree(textGrob(rightLabel, x=0.9,y=0.03,hjust=0, gp=gpar(col="black", fontsize=18)))
   return(
     ggplot(data, aes(x=log2FoldChange, y=-log10(padj), label=row.names(data))) +
     geom_point(alpha=0.2, size=3, colour="black") + theme_bw() +  theme(legend.position="none") + 
     geom_text_repel(data=subset(data, padj< repelThresh), aes(label=row.names(subset(data, padj<repelThresh)))) + 
     ggtitle(title) + xlab("log2 fold change") + ylab("-log10 p-adj") + 
+    theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5)) +
     annotation_custom(left_grob) + annotation_custom(right_grob)
   )
 }
@@ -214,12 +295,13 @@ plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel)
 }
 
 
-plotGSEAtraditional <- function (singlePathway, pathwayName, title, leftLabel, rightLabel, cohortCompare)
+plotGSEAtraditional <- function (mergeResults, singlePathway, pathwayName, title, leftLabel, rightLabel, cohortCompare, legendUpperRight)
 {
   if (cohortCompare == F)     {     colorGrob1 <- "black"; colorGrob2 <- "black"     }
   if (cohortCompare == T)   { colorGrob1 <- "#FFB18C"; colorGrob2 <- "#7FAEDB"}
   annotationInfo <- paste0("NES: ", round(mergeResults$NES[grep(pathwayName,mergeResults$NAME)],2), "\n", "FDR: ", formatC(mergeResults$FDR.q.val[grep(pathwayName,mergeResults$NAME)], format = "e", digits = 1))
-  my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.15, hjust=0, gp=gpar(col="black", fontsize=28)))
+  if (legendUpperRight == T)   {   main_grob = grobTree(textGrob(annotationInfo, x=0.58,  y=0.82, hjust=0, gp=gpar(col="black", fontsize=28)))     }
+  if (legendUpperRight == F)   {   main_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.15, hjust=0, gp=gpar(col="black", fontsize=28)))     }
   left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.97,hjust=0, gp=gpar(col=colorGrob1, fontsize=18)))
   right_grob <- grobTree(textGrob(rightLabel, x=0.8,y=0.97,hjust=0, gp=gpar(col=colorGrob2, fontsize=18))) 
   return(
@@ -227,7 +309,7 @@ plotGSEAtraditional <- function (singlePathway, pathwayName, title, leftLabel, r
     geom_rug(sides="b", size=0.75, alpha=0.5) + theme_bw() +
     ggtitle(title) + ylab("Enrichment score") + xlab("Rank in gene list") + 
     theme(axis.text = element_text(size=24,hjust = 0.5), axis.title = element_text(size=24,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5))+
-    annotation_custom(my_grob) + geom_hline(yintercept = 0) + 
+    annotation_custom(main_grob) + geom_hline(yintercept = 0) + 
       annotation_custom(left_grob) + annotation_custom(right_grob)
   )
 

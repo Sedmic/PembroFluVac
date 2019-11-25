@@ -42,13 +42,15 @@ logDataMatrix <- read.csv( file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/lo
 # -------------------- global heatmap of relevant/interesting genes  ------------------------
 probeGenes <- logDataMatrix[ c("CXCR5", "PRDM1",  "IFNG","MAF","CCR6","CXCR3","GATA3",
                "BTLA","TNFRSF4", "CD38","TIGIT","POU2AF1","MKI67","SH2D1A", "TOX2", "BIRC5", "TBK1", "CD19","MS4A1","FUT8","ST6GAL1","B4GALT1",
-               "JCHAIN","AICDA", "CMTM6", "AK9", "ZNF770","CD3E","CD4", "PAX5") , ]  # some genes taken from genomicscape.com
+               "JCHAIN","AICDA", "CMTM6", "AK9", "ZNF770","CD3E","CD4", "PAX5", "SDC1") , ]  # some genes taken from genomicscape.com
 
 
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
+         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression", show_colnames = F, cutree_cols = 5, cutree_rows = 4
+         #, filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/SelectedGenes_allSubsets_allTimePoints_allSubjects_heatmap.pdf"
+         )
 
 
 
@@ -267,6 +269,7 @@ DESdata_HiHi_AvH_oW <- DESeq(HiHi_aPD1_v_HC_oW, parallel=TRUE)
 HiHi_AvH_oW <- as.data.frame(results(DESdata_HiHi_AvH_oW, contrast = c("condition", "aPD1_HiHi_cTfh_oneWeek", "Healthy_HiHi_cTfh_oneWeek") ))  # pos stats = first elem in comparison
 # write.csv(HiHi_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/HiHi_AvH_oW.csv")
 volcanoPlot(HiHi_AvH_oW, repelThresh = 0.15, title = "HiHi at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/HiHi_H-v-aPD1_d7_volcano.pdf", device="pdf")
 
 probeGenes <- logDataMatrix[ grep(paste(c("MKI67$", "HELLS","GGCT","PMM1","PCSK7","^GK$","^OASL$","TNFRSF1B","OASL","UGDH$",
                                           "TMEM71","RALBP1","ORAI2","CKAP2L", "PRDM1$"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
@@ -280,11 +283,18 @@ pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col =
 dev.off()
 
 metaX <- makeMetaData(colnames(probeGenes)); 
-probeGenes <- logDataMatrix[ grep(paste(c("BCL6$", "PRDM1$"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
+probeGenes <- logDataMatrix[ grep(paste(c("BCL6$","IL21","IL10", "PRDM1$","TOX2"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
 
 data <- merge(metaX, y=t(probeGenes), by=0) ; data <- data[data$TimeCategory == "oneWeek", ]
 data$Cohort <- factor(data$Cohort, levels=c("Healthy","aPD1"))
-twoSampleBox(data[, c("TimeCategory","Cohort","BCL6")], xData = "Cohort", yData = "BCL6", fillParam = "Cohort", title = "PRDM1 in +/+ cTfh", yLabel = "log2 counts")
+twoSampleBox(data[, c("TimeCategory","Cohort","BCL6")], xData = "Cohort", yData = "BCL6", fillParam = "Cohort", title = "BCL6 in +/+ cTfh", yLabel = "log2 counts")
+twoSampleBox(data[, c("TimeCategory","Cohort","PRDM1")], xData = "Cohort", yData = "PRDM1", fillParam = "Cohort", title = "PRDM1 in +/+ cTfh", yLabel = "log2 counts")
+twoSampleBox(data[, c("TimeCategory","Cohort","IL10")], xData = "Cohort", yData = "IL10", fillParam = "Cohort", title = "IL10 in +/+ cTfh", yLabel = "log2 counts")
+twoSampleBox(data[, c("TimeCategory","Cohort","TOX2")], xData = "Cohort", yData = "TOX2", fillParam = "Cohort", title = "TOX2 in +/+ cTfh", yLabel = "log2 counts")
+
+data$BCL6_to_PRDM1_ratio <- data$BCL6 / data$PRDM1
+twoSampleBox(data[, c("TimeCategory","Cohort","BCL6_to_PRDM1_ratio")], xData = "Cohort", yData = "BCL6_to_PRDM1_ratio", fillParam = "Cohort", 
+             title = "BCL6_to_PRDM1_ratio in +/+ cTfh", yLabel = "Bcl6/PRDM1 counts")
 
 
 # --------------------------- PB in aPD1 vs HC   baseline  --------------------------------
@@ -320,7 +330,7 @@ PB_AvH_oW <- as.data.frame(results(DESdata_PB_AvH_oW, contrast = c("condition", 
 volcanoPlot(PB_AvH_oW, repelThresh = 0.15, title = "PB at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
 
 probeGenes <- logDataMatrix[ grep(paste(c("CD6$", "SLBP$","GNAI2$","STK17A","PNRC1$","DYRK2$","^DUSP1$","KLF3$","B3GNT2$","HEBP2$",
-                                          "PNRC1","SNX20","IGLV9.49"), collapse="|"), rownames(logDataMatrix), value=F), grep("PB",colnames(logDataMatrix),value=F)]
+                                          "PNRC1","SNX20","IGLV9.49", "KIF2C","AURKB"), collapse="|"), rownames(logDataMatrix), value=F), grep("PB",colnames(logDataMatrix),value=F)]
 
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
@@ -338,6 +348,7 @@ ABC_aPD1_v_HC_oW <- ABC_aPD1_v_HC_oW[idx,]   # keep hard filter from above for c
 DESdata_ABC_AvH_oW <- DESeq(ABC_aPD1_v_HC_oW, parallel=TRUE)
 
 ABC_AvH_oW <- as.data.frame(results(DESdata_ABC_AvH_oW, contrast = c("condition", "aPD1_ABC_oneWeek", "Healthy_ABC_oneWeek") ))  # pos stats = first elem in comparison
+# write.csv(ABC_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/ABC_AvH_oW.csv")
 volcanoPlot(ABC_AvH_oW, repelThresh = 0.05, title = "ABC at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
 
 probeGenes <- logDataMatrix[ grep(paste(c("RPP40$", "ZSCAN22$","NTHL1$","RARRES3","MRPL10$","MGEA5$","^CCNL2$","NKTR$","COG6$","DDX39A$",
@@ -368,24 +379,105 @@ plotGSEAlollipop( mergeResults, title = "Hallmark: HiHi AvH at oW", leftLabel = 
 
 # IL-2 stat5 pathway 
 singlePathway <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_IL2_STAT5_SIGNALING.xls", sep="\t")
-plotGSEAtraditional(singlePathway, pathwayName = "IL2", title = "IL2-STAT5 signaling: HiHi AvH at oW", leftLabel = "Enrich for aPD1", rightLabel = "Enrich for Healthy", cohortCompare =T)
-ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPahtways_IL2STAT5_oW.pdf", device="pdf")  
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "IL2", title = "IL2-STAT5: HiHi AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = F)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPahtways_IL2STAT5_oW.pdf", device="pdf", width = 7, height=6)  
 
 # TNF-NFkB
 singlePathway <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_TNFA_SIGNALING_VIA_NFKB.xls", sep="\t")
-plotGSEAtraditional(singlePathway, pathwayName = "TNF", title = "Hallmark TNF-NFkB signaling: HiHi AvH at oneWeek", leftLabel = "Enrich for aPD1", rightLabel = "Enrich for Healthy", cohortCompare =T)
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "TNF", title = "TNF-NFkB: HiHi AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = F)
+
+# G2m pathway 
+singlePathway <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_G2M_CHECKPOINT.xls", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "G2M", title = "G2M checkpoint: HiHi AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPathways_G2M_oW.pdf", device="pdf", width=7, height=6)  
+
+# MitoticSpindle 
+singlePathway <-  read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "MITOT", title = "Mitotic Spindle: HiHi AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPathways_MitSpindle_oW.pdf", device="pdf", width=7, height=6)    
 
 
-
-
-
-# ************ HiHi for AvH at oneWeek  ********************
+# ************ HiHi for AvH at baseline  ********************
 
 pathwayPos <- read.csv("Results/HiHi_AvH_bL_hallmark.GseaPreranked.1573243362228/gsea_report_for_na_pos_1573243362228.xls", sep="\t")
 pathwayNeg <- read.csv("Results/HiHi_AvH_bL_hallmark.GseaPreranked.1573243362228/gsea_report_for_na_neg_1573243362228.xls", sep="\t")
 mergeResults <- rbind(pathwayPos, pathwayNeg)
-plotGSEAlollipop( mergeResults, title = "Hallmark genesets: HiHi AvH at baseline", leftLabel = "Enrich for Healthy", rightLabel = "Enrich for aPD1")
+plotGSEAlollipop( mergeResults, title = "Hallmark genesets: HiHi AvH at baseline", leftLabel = "Healthy", rightLabel = " aPD1")
 
+
+# ************ PB for AvH at oneWeek  ********************
+pathwayPos <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/gsea_report_for_na_pos_1574366663536.xls", sep="\t")
+pathwayNeg <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/gsea_report_for_na_neg_1574366663536.xls", sep="\t")
+mergeResults <- rbind(pathwayPos, pathwayNeg)
+plotGSEAlollipop( mergeResults, title = "Hallmark: PB AvH at oW", leftLabel = "Healthy", rightLabel = "aPD1")
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HallmarkPathways_AvH_oW.pdf", device="pdf", width=6, height=7)
+
+# G2m pathway 
+singlePathway <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/HALLMARK_G2M_CHECKPOINT.xls", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "G2M", title = "G2M checkpoint: PB AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HallmarkPathways_G2M_oW.pdf", device="pdf", width=7, height=6)  
+
+# Mitotic Spindle
+singlePathway <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "MITOT", title = "Mitotic Spindle: PB AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HallmarkPahtways_MitSpindle_oW.pdf", device="pdf", width=7, height=6)  
+
+
+# ************ ABC for AvH at oneWeek  ********************
+pathwayPos <- read.csv("Results/ABC_AvH_oW_hallmark.GseaPreranked.1574696455529/gsea_report_for_na_pos_1574696455529.xls", sep="\t")
+pathwayNeg <- read.csv("Results/ABC_AvH_oW_hallmark.GseaPreranked.1574696455529/gsea_report_for_na_neg_1574696455529.xls", sep="\t")
+mergeResults <- rbind(pathwayPos, pathwayNeg)
+plotGSEAlollipop( mergeResults, title = "Hallmark: ABC AvH at oW", leftLabel = "Healthy", rightLabel = "aPD1")
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HallmarkPathways_AvH_oW.pdf", device="pdf", width=7, height=6)
+
+# G2m pathway 
+singlePathway <- read.csv("Results/ABC_AvH_oW_hallmark.GseaPreranked.1574696455529/HALLMARK_G2M_CHECKPOINT.xls", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "G2M", title = "G2M checkpoint: ABC AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HallmarkPathways_G2M_oW.pdf", device="pdf", width=7, height=6)  
+
+# Mitotic Spindle
+singlePathway <- read.csv("Results/ABC_AvH_oW_hallmark.GseaPreranked.1574696455529/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "MITOT", title = "Mitotic Spindle: ABC AvH at oW", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HallmarkPahtways_MitSpindle_oW.pdf", device="pdf", width=7, height=6)  
+
+
+
+
+
+# combined GSEA plots 
+
+Tfh_G2M <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_G2M_CHECKPOINT.xls", sep="\t")
+Tfh_MitSpindle <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
+PB_G2M <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/HALLMARK_G2M_CHECKPOINT.xls", sep="\t")
+PB_MitSpindle <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
+ABC_G2M <- read.csv("Results/ABC_AvH_oW_hallmark.GseaPreranked.1574696455529/HALLMARK_G2M_CHECKPOINT.xls", sep="\t")
+ABC_MitSpindle <- read.csv("Results/ABC_AvH_oW_hallmark.GseaPreranked.1574696455529/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
+
+ggplot() + 
+  geom_line(data=Tfh_G2M, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), color="darkgreen", size=1) + 
+  geom_rug(data=Tfh_G2M, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), sides="b", size=0.75, alpha=0.5, color="darkgreen") +
+  geom_line(data=PB_G2M, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), color="orange", size=1) + 
+  geom_rug(data=PB_G2M, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), sides="t", size=0.75, alpha=0.5, color="orange") +
+  geom_line(data=ABC_G2M, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), color="purple", size=1) + 
+  #geom_rug(data=ABC_G2M, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), sides="t", size=0.75, alpha=0.5, color="orange") +
+  theme_bw() +  ggtitle("Hallmark: G2M Checkpoint") + ylab("Enrichment score") + xlab("Rank in gene list") + 
+  theme(axis.text = element_text(size=24,hjust = 0.5), axis.title = element_text(size=24,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5))+
+  geom_hline(yintercept = 0)  
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSEA_cTfh-plus-PB_Hallmark_AvH_oW_G2Mcheckpoint.pdf", device = 'pdf', width=7, height=6)
+  
+ggplot() + 
+    geom_line(data=Tfh_MitSpindle, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), color="darkgreen", size=1) + 
+    geom_rug(data=Tfh_MitSpindle, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), sides="b", size=0.75, alpha=0.5, color="darkgreen") +
+    geom_line(data=PB_MitSpindle, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), color="orange", size=1) + 
+    geom_rug(data=PB_MitSpindle, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), sides="t", size=0.75, alpha=0.5, color="orange") +
+    geom_line(data=ABC_MitSpindle, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), color="purple", size=1) + 
+    #geom_rug(data=PB_MitSpindle, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES), sides="t", size=0.75, alpha=0.5, color="orange") +
+    theme_bw() +  ggtitle("Hallmark: Mitotic Spindle") + ylab("Enrichment score") + xlab("Rank in gene list") + 
+    theme(axis.text = element_text(size=24,hjust = 0.5), axis.title = element_text(size=24,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5))+
+    geom_hline(yintercept = 0)  
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSEA_cTfh-plus-PB_Hallmark_AvH_oW_MitSpindle.pdf", device = 'pdf', width=7, height=6)
+
+  
 
 
 setwd(workingDir)
