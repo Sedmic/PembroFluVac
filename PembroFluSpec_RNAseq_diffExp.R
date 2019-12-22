@@ -12,6 +12,8 @@ library("tools")
 library("viridis")
 library("scales")
 library("gridExtra")
+library("GSVA")
+library("GSEABase")
 sessionInfo()
 source('D:/Pembro-Fluvac/Analysis/PembroFluSpec_Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
 
@@ -510,13 +512,42 @@ plotIPAlollipop( upstreamIPA_filter, title = "Ingenuity UpstreamPred: HiHi AvH o
 
 setwd(workingDir)
 
+# ----------- ----------- 
+
+#' ## -                           GSVA analysis 
+
+# ----------- ----------- 
 
 
+gsets <- getGmt("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GSEA/h.all.v7.0.symbols.gmt")
+HiHiv2 <- as.matrix( logDataMatrix[,grep("HiHi_oW",colnames(logDataMatrix))] )
+GSVAhallmark <- gsva(HiHiv2, gsets, method="gsva")
+GSVAhallmarkmeta <- makeMetaData( colnames(GSVAhallmark))
+temp <- as.data.frame(t(GSVAhallmark))
+temp <- merge(x = temp, y = GSVAhallmarkmeta, by=0)
+temp$Subject <- str_replace(temp$Subject,"^X","")
+temp$Subject <- str_replace(temp$Subject, "[.]","-")
+loadData <- function()
+{
+  mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/allMergedData.csv", stringsAsFactors = F, header = T, row.names = 1)
+  mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline", "oneWeek","late"))
+  mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
+  mergedData$dummy <- "dummy"
+  return(mergedData)
+}
 
+# mergedData <- loadData()
 
-
-
-
+pheno_RNA <- merge(x = mergedData, y = temp, by = c("Cohort","Subject","TimeCategory"))
+univScatter(data=pheno_RNA, xData = "HALLMARK_IL2_STAT5_SIGNALING", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+            fillParam = "TimeCategory", title = "+/+ cTfh vs GSVA IL2/STAT5 at oneWeek", xLabel= "GSVA score - IL2-STAT5", yLabel = "ICOS+CD38+ cTfh frequency") + 
+  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_IL2STAT5_vs_cTfh_oW_univ.pdf", device="pdf", height=8, width=8)
+subsetData1 <- subset(pheno_RNA, Cohort == "Healthy")    ; subsetData2 <- subset(pheno_RNA, Cohort == "aPD1")   
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "HALLMARK_IL2_STAT5_SIGNALING", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "+/+ cTfh vs GSVA IL2/STAT5 at oneWeek", xLabel= "GSVA score - IL2-STAT5", yLabel = "ICOS+CD38+ cTfh frequency") + 
+  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_IL2STAT5_vs_cTfh_oW_biv.pdf", device="pdf", height=8, width=8)
 
 
 

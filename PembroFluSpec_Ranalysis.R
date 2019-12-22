@@ -97,7 +97,6 @@ rm(Bflow); rm(temp1); rm(temp2); rm(temp3); rm(temp4); rm(temp5); rm(temp6)
 
 # write.csv(mergedData, file = "D:/Pembro-Fluvac/Analysis/mergedData/allMergedData.csv")
 
-
 dataAvail <- mergedData[ , - grep(paste(c("TimePoint", "dummy", "Visit","Label"), collapse = "|"), colnames(mergedData))]
 temp <- reshape(dataAvail, idvar = c('Subject', 'Cohort','Year'), timevar = c('TimeCategory'),direction = 'wide')
 saveCohort <- temp[which(temp$Cohort != "nonPD1"),"Cohort"]
@@ -122,11 +121,16 @@ pheatmap(as.data.frame(t(simplifiedDataAvail)), cluster_col = F,color=gray.color
 #'
 #'
  
-table(mergedData$Cohort, mergedData$Sex, mergedData$Year)/3  # divide by 3 because demog data repeated 3x per subject
+table(mergedData$Cohort, mergedData$Sex, mergedData$Year)  
 #pdf(file = "D:/Pembro-Fluvac/Analysis/Images/Cycle_of_immunotherapy.pdf")
+
 hist(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Cycle.of.Immunotherapy'], breaks = 50, col = "grey90",main = "Cycle of IT")   
 # dev.off()
 median(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Cycle.of.Immunotherapy'], na.rm = T)  
+paste("Median Age aPD1: ", median(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)  )
+paste("Median Age Healthy: ", median(mergedData[which(mergedData$Cohort == "Healthy" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)   )
+paste("Range Age aPD1: ", range(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)  )
+paste("Range Age Healthy: ", range(mergedData[which(mergedData$Cohort == "Healthy" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)   )
 
 
 
@@ -345,7 +349,6 @@ twoSampleBox(data=subsetData, xData="Cohort", yData="IgDlo_CD71hi_ActBCells...Fr
 
 
 
-
 #' ## ----------- Tfh and PB Fold-change at day 7  --------------------
 #'
 #'
@@ -488,80 +491,76 @@ bivScatter(data1 = FC_Tfhresponse[which(FC_Tfhresponse$Cohort == "Healthy"),], d
 #'
 ## ***************    CD27++CD38++     ********************
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
-subsetData1 <- subset(oneWeek, Cohort == "Healthy" & Year == "3")    
-subsetData2 <- subset(oneWeek, Cohort == "aPD1" & Year == "3" )    
+subsetData1 <- subset(oneWeek, Cohort == "Healthy" )    
+subsetData2 <- subset(oneWeek, Cohort == "aPD1")    
 bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "CD27hiCD38hi_..FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-                fillParam = "Cohort", title = "Yr3: cTfh vs PB response at oneWeek", xLabel= "CD27++CD38++ (freq IgD-)", yLabel = "ICOS+CD38+ cTfh frequency") + scale_x_continuous(breaks=seq(0,99,5)) + scale_y_continuous(breaks=seq(0,99,1))
+                fillParam = "Cohort", title = "cTfh vs PB response at oneWeek", xLabel= "CD27++CD38++ (freq IgD-)", yLabel = "ICOS+CD38+ cTfh frequency") + scale_x_continuous(breaks=seq(0,99,5)) + scale_y_continuous(breaks=seq(0,99,1))
 univScatter(data = oneWeek, xData = "CD27hiCD38hi_..FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
-            title = "AllYrs: cTfh vs CD27++CD38++ at oneWeek", xLabel= "CD27++CD38++ (freq IgD-)", yLabel = "ICOS+CD38+ cTfh frequency")
+            title = "+/+ cTfh vs CD27++CD38++ at oneWeek", xLabel= "CD27++CD38++ (freq IgD-)", yLabel = "ICOS+CD38+ cTfh frequency")
 fit <- lm(subsetData1$CD27hiCD38hi_..FreqParent ~  subsetData1$cTfh_ICOShiCD38hi_..FreqParent)
 fit <- lm(subsetData1$CD27hiCD38hi_..FreqParent ~  subsetData1$cTfh_ICOShiCD38hi_..FreqParent)
 outlier <- which(cooks.distance(fit) == max(cooks.distance(fit)))       # one row identified with high Cook's distance
-bivScatter(data1 = subsetData1[ -as.numeric(names(outlier)), ], data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "CD27hiCD38hi_..FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-           fillParam = "Cohort", title = "Yr3: cTfh vs PB response at oneWeek", xLabel= "Plasmablast (freq CD19+IgD-)", yLabel = "ICOS+CD38+ cTfh frequency") + 
-  scale_x_continuous(breaks=seq(0,99,1)) + scale_y_continuous(breaks=seq(0,99,2))
+bivScatter(data1 = subsetData1[ -as.numeric(names(outlier)), ], data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "CD27hiCD38hi_..FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "cTfh vs PB response at oneWeek", yLabel= "27+38+ Plasmablast (freq CD19+IgD-)", xLabel = "ICOS+CD38+ cTfh frequency") + coord_cartesian(ylim = c(0,12))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_PB-27-38-d7_freqCD71.pdf", device="pdf")
 # ************** different denominator *********************
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
-oneWeek$CD27hiCD38hi_..FreqParent <- oneWeek$CD27hiCD38hi_..FreqParent * oneWeek$IgDlo_CD71hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent / 10000
+oneWeek$CD27hiCD38hi_..FreqParent <- oneWeek$CD27hiCD38hi_..FreqParent *oneWeek$CD19hi_NotNaiveB_freqParent / 100
 subsetData1 <- subset(oneWeek, Cohort == "Healthy" )    
 subsetData2 <- subset(oneWeek, Cohort == "aPD1"  & cTfh_ICOShiCD38hi_..FreqParent > 1)    #  *****   OUTLIER REMOVED
-bivScatter(data1 =  subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "CD27hiCD38hi_..FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-           fillParam = "Cohort", title = "AllYrs: cTfh vs CD27++CD38++ at oneWeek", xLabel= "CD27++CD38++ (freq CD19)", yLabel = "ICOS+CD38+ cTfh frequency") + 
-  scale_x_continuous(breaks=seq(0,99,0.05)) + scale_y_continuous(breaks=seq(0,99,2))
+bivScatter(data1 =  subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "CD27hiCD38hi_..FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "cTfh vs CD27+CD38+ at oneWeek", yLabel= "CD27+CD38+ (freq CD19)", xLabel = "ICOS+CD38+ cTfh frequency") + coord_cartesian(xlim = c(0,12),ylim = c(0,4))
 fit <- lm(subsetData1$CD27hiCD38hi_..FreqParent ~  subsetData1$cTfh_ICOShiCD38hi_..FreqParent)
 outlier <- which(cooks.distance(fit) == max(cooks.distance(fit)))       # one row identified with high Cook's distance
 #  by review of Cook's distance, row 26 in subsetData1 has the highest Cook's distance and will thus exclude
-bivScatter(data1 =  subsetData1[ -as.numeric(names(outlier)), ], data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "CD27hiCD38hi_..FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-           fillParam = "Cohort", title = "AllYrs: cTfh vs CD27++CD38++ at oneWeek", xLabel= "CD27++CD38++ (freq CD19)", yLabel = "ICOS+CD38+ cTfh frequency") + 
-  scale_x_continuous(breaks=seq(0,99,0.05)) + scale_y_continuous(breaks=seq(0,99,2))
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_PB-27-38-d7_freqCD19.pdf", device="pdf")
-univScatter(data = oneWeek, xData = "CD27hiCD38hi_..FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
-            title = "AllYrs: cTfh vs CD27++CD38++  at oneWeek", xLabel= "CD27++CD38++ (freq CD19)", yLabel = "ICOS+CD38+ cTfh frequency")
+bivScatter(data1 =  subsetData1[ -as.numeric(names(outlier)), ], data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "CD27hiCD38hi_..FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "+/+ cTfh vs CD27+CD38+ at oneWeek", yLabel= "CD27+CD38+ (freq CD19)", xLabel = "ICOS+CD38+ cTfh frequency") + coord_cartesian(xlim = c(0,11), ylim = c(0,4))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_PB-27-38-d7_freqCD19.pdf", device="pdf", width=9, height=7)
+univScatter(data = oneWeek, yData = "CD27hiCD38hi_..FreqParent", xData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
+            title = "+/+ cTfh vs CD27+CD38+  at oneWeek", yLabel= "CD27+CD38+ (freq CD19)", xLabel = "ICOS+CD38+ cTfh frequency") + coord_cartesian(xlim = c(0,11), ylim=c(0,4))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_PB-27-38-d7_freqCD19_univ.pdf", device="pdf")
 
 
 
 ## ***************    CD71+ CD20loPB    ********************
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
-subsetData1 <- subset(oneWeek, Cohort == "Healthy" & Year == "3")   
-subsetData2 <- subset(oneWeek, Cohort == "aPD1" & Year == "3" )    
-bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-                fillParam = "Cohort", title = "Yr3: cTfh vs CD20lo response at oneWeek", xLabel= "CD71+CD20lo frequency", yLabel = "ICOS+CD38+ cTfh frequency") + 
-  scale_x_continuous(breaks=seq(0,99,5)) + scale_y_continuous(breaks=seq(0,99,1), limits = c(0,15))
+subsetData1 <- subset(oneWeek, Cohort == "Healthy" )   
+subsetData2 <- subset(oneWeek, Cohort == "aPD1"  )    
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+                fillParam = "Cohort", title = "cTfh vs CD20lo response at oneWeek", yLabel= "CD71+CD20lo frequency", xLabel = "ICOS+CD38+ cTfh frequency") 
 univScatter(data = oneWeek, xData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
-            title = "Yr3: cTfh vs CD20lo at oneWeek", xLabel= "CD20lo (freq CD71+)", yLabel = "ICOS+CD38+ cTfh frequency")
+            title = "+/+ cTfh vs ASC at oneWeek", xLabel= "CD20lo (freq CD71+)", yLabel = "ICOS+CD38+ cTfh frequency")
 # ************** different denominator *********************
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
 oneWeek$IgDlo_CD71hi_CD20loCD71hi...FreqParent <-  oneWeek$IgDlo_CD71hi_CD20loCD71hi...FreqParent * oneWeek$IgDlo_CD71hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent / 10000
-subsetData1 <- subset(oneWeek, Cohort == "Healthy" & Year == "3" )   
-subsetData2 <- subset(oneWeek, Cohort == "aPD1" & Year == "3" )    
-bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-           fillParam = "Cohort", title = "Yr3: cTfh vs CD20lo response at oneWeek", xLabel= "PB CD71+CD20lo (freq CD19)", yLabel = "ICOS+CD38+ cTfh frequency")#  + scale_x_continuous(breaks=seq(0,99,5)) + scale_y_continuous(breaks=seq(0,99,1), limits = c(0,15))
-univScatter(data = oneWeek, xData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
-            title = "Yr3: cTfh vs CD20lo at oneWeek", xLabel= "PB CD71+CD20lo (freq CD19)", yLabel = "ICOS+CD38+ cTfh frequency")
+subsetData1 <- subset(oneWeek, Cohort == "Healthy" )   
+subsetData2 <- subset(oneWeek, Cohort == "aPD1"  )    
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "cTfh vs CD20lo response at oneWeek", yLabel= "PB CD71+CD20lo (freq CD19)", xLabel = "ICOS+CD38+ cTfh frequency")
+univScatter(data = oneWeek, yData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", xData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
+            title = "+/+ cTfh vs ASC at oneWeek", yLabel= "PB CD71+CD20lo (freq CD19)", xLabel = "ICOS+CD38+ cTfh frequency") + coord_cartesian(xlim = c(0,12), ylim=c(0,3))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_PB-71hi-20lo-d7_freqCD19_univ.pdf", device="pdf")
 
 
 ## ***************    CD71+ CD20hi ABC    ********************
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
-subsetData1 <- subset(oneWeek, Cohort == "Healthy" & Year == "3" )    
-subsetData2 <- subset(oneWeek, Cohort == "aPD1" & Year == "3" ) 
+subsetData1 <- subset(oneWeek, Cohort == "Healthy"  )    
+subsetData2 <- subset(oneWeek, Cohort == "aPD1" ) 
 bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "IgDlo_CD71hi_ActBCells...FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-                fillParam = "Cohort", title = "Yr3: cTfh vs ABC at oneWeek", xLabel= "ABC CD20hi (freq CD71+)", yLabel = "ICOS+CD38+ cTfh frequency") + 
+                fillParam = "Cohort", title = " cTfh vs ABC at oneWeek", xLabel= "ABC CD20hi (freq CD71+)", yLabel = "ICOS+CD38+ cTfh frequency") + 
   scale_x_continuous(breaks=seq(0,99,5)) + scale_y_continuous(breaks=seq(0,99,1), limits = c(0,15))
-univScatter(data = oneWeek, xData = "IgDlo_CD71hi_ActBCells...FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
-            title = "Yr3: cTfh vs CD20hi at oneWeek", xLabel= "ABC CD20hi (freq CD71+)", yLabel = "ICOS+CD38+ cTfh frequency")
+univScatter(data = oneWeek, yData = "IgDlo_CD71hi_ActBCells...FreqParent", xData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
+            title = "+/+ cTfh vs ABC at oneWeek", yLabel= "ABC CD20hi (freq CD71+)", xLabel = "ICOS+CD38+ cTfh frequency")
 
 # ************** different denominator *********************
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
 oneWeek$IgDlo_CD71hi_ActBCells...FreqParent <-  oneWeek$IgDlo_CD71hi_ActBCells...FreqParent * oneWeek$IgDlo_CD71hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent / 10000
-subsetData1 <- subset(oneWeek, Cohort == "Healthy" & Year == "3"  )   
-subsetData2 <- subset(oneWeek, Cohort == "aPD1" & Year == "3" )      
-bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "IgDlo_CD71hi_ActBCells...FreqParent", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-           fillParam = "Cohort", title = "cTfh vs ABC at oneWeek", xLabel= "ABC CD20hi (freq CD19)", yLabel = "ICOS+CD38+ cTfh frequency") #+ scale_x_continuous(breaks=seq(0,99,5)) + scale_y_continuous(breaks=seq(0,99,1), limits=c(0,12))
-univScatter(data = oneWeek, xData = "IgDlo_CD71hi_ActBCells...FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
-            title = "Yr3: cTfh vs CD20hi at oneWeek", xLabel= "ABC CD20hi (freq CD19)", yLabel = "ICOS+CD38+ cTfh frequency")
+subsetData1 <- subset(oneWeek, Cohort == "Healthy"   )   
+subsetData2 <- subset(oneWeek, Cohort == "aPD1"  )      
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "IgDlo_CD71hi_ActBCells...FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "cTfh vs ABC at oneWeek", yLabel= "ABC CD20hi (freq CD19)", xLabel = "ICOS+CD38+ cTfh frequency") 
+univScatter(data = oneWeek, yData = "IgDlo_CD71hi_ActBCells...FreqParent", xData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
+            title = "+/+ cTfh vs CD20hi at oneWeek", yLabel= "ABC CD20hi (freq CD19)", xLabel = "ICOS+CD38+ cTfh frequency")
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_ABC-71hi-20hi-d7_freqCD19_univ.pdf", device="pdf")
 
 
@@ -589,7 +588,10 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
            fillParam = "Cohort", title = "AllYrs: cTfh vs ActivB response at oneWeek", xLabel= "CD20hi (freq CD71+)", yLabel = "ICOS+CD38+ cTfh frequency")
 univScatter(data = oneWeek, xData = "IgDlo_CD71hi_ActBCells...FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
             title = "AllYrs: cTfh vs CD20hi response at oneWeek", xLabel= "CD20hi (freq CD71+)", yLabel = "ICOS+CD38+ cTfh frequency")
-
+oneWeek$CD27hiCD38hi_..FreqParent <-  oneWeek$CD27hiCD38hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent /100
+oneWeek$IgDlo_CD71hi_ActBCells...FreqParent <-  oneWeek$IgDlo_CD71hi_ActBCells...FreqParent * oneWeek$IgDlo_CD71hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent / 10000
+fit <- lm(oneWeek$CD27hiCD38hi_..FreqParent ~  oneWeek$cTfh_ICOShiCD38hi_..FreqParent)
+outlier <- which(cooks.distance(fit) == max(cooks.distance(fit)))       # one row identified with high Cook's distance
 cTfhCorrel <- function( data, subset )
 {
   z <- vector()
@@ -599,15 +601,12 @@ cTfhCorrel <- function( data, subset )
   return(z)
 }
 result <- data.frame(CellType = 0, Healthy = 0, aPD1 = 0)
-data <- oneWeek
-result[1,] <- cTfhCorrel(data, subset = "IgDlo_CD71hi_ActBCells...FreqParent")
-result[2,] <- cTfhCorrel(data, subset = "IgDlo_CD71hi_CD20loCD71hi...FreqParent")
-result[3,] <- cTfhCorrel(data, subset = "CD27hiCD38hi_..FreqParent")
+result[1,] <- cTfhCorrel(oneWeek, subset = "IgDlo_CD71hi_ActBCells...FreqParent")
+result[2,] <- cTfhCorrel(oneWeek[ -as.numeric(names(outlier)), ], subset = "CD27hiCD38hi_..FreqParent")
 result$CellType <- str_replace(result$CellType, "IgDlo_CD71hi_ActBCells...FreqParent", "Activ B cells")
-result$CellType <- str_replace(result$CellType, "IgDlo_CD71hi_CD20loCD71hi...FreqParent", "CD20lo ASC")
 result$CellType <- str_replace(result$CellType, "CD27hiCD38hi_..FreqParent", "CD27++CD38++ ASC")
 result <- melt(result, id.vars = "CellType", measure.vars = c("Healthy","aPD1")); result$value <- as.numeric(result$value)
-result$CellType <- factor(result$CellType, levels = c("CD27++CD38++ ASC", "CD20lo ASC", "Activ B cells"))
+result$CellType <- factor(result$CellType, levels = c("CD27++CD38++ ASC",  "Activ B cells"))
 ggplot(result, aes(x=CellType, fill=variable, color="bl")) + geom_bar(aes(y = value), stat='identity', position="dodge" ) + theme_bw()  + 
   scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + scale_color_manual(values="black") + ggtitle("Pearson correl with\n ICOS+CD38+ cTfh at oneWeek") + ylab("Pearson r") + 
   theme(axis.text.x = element_text(size=12,hjust = 1, angle = 45), axis.title = element_text(size=12,hjust = 0.5), plot.title = element_text(size=14,hjust = 0.5), 
@@ -683,15 +682,15 @@ prePostTimeAveraged(melted, title = "IgDloCD71+CD20+ ABC responses averaged", xL
 subsetData <- subset(mergedData,  cTfh_ICOShiCD38hi_..FreqParent > 1 & Cohort != "nonPD1")    #  *****   OUTLIER REMOVED
 univScatter(data = subsetData, xData = "HAI.titer..H1N1pdm09.", yData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
             title = "AllYrs: Cycle of IT vs HAI titer", xLabel= "HAI titer H1N1pdm09", yLabel = "Cycle of immunotherapy")
-univScatter(data = subsetData, xData = "cTfh_ICOShiCD38hi_..FreqParent", yData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
-            title = "AllYrs: Cycle of IT vs +/+ cTfh at bL", xLabel= "ICOS+CD38+ cTfh", yLabel = "Cycle of immunotherapy") + coord_cartesian(xlim= c(0,6))
+univScatter(data = subsetData, yData = "cTfh_ICOShiCD38hi_..FreqParent", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
+            title = "AllYrs: Cycle of IT vs +/+ cTfh at bL", yLabel= "ICOS+CD38+ cTfh freq", xLabel = "Cycle of immunotherapy") + coord_cartesian(ylim= c(0,8))
 summary(fit <- lm(Cycle.of.Immunotherapy ~ cTfh_ICOShiCD38hi_..FreqParent, subsetData))
 
 FC_response <- dcast( subset(mergedData, TimeCategory != "late" & cTfh_ICOShiCD38hi_..FreqParent > 0), `Subject`+`Cohort`~`TimeCategory`, value.var = c("cTfh_ICOShiCD38hi_..FreqParent")) 
 FC_response$FCtfh <- FC_response$`oneWeek`/FC_response$`baseline`; FC_response$Cohort <- NULL
 subsetData <- merge(x=FC_response, y=subsetData, by = "Subject")
-univScatter(data = subsetData, xData = "FCtfh", yData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
-            title = "AllYrs: Cycle of IT vs +/+ cTfh FC", xLabel= "ICOS+CD38+ cTfh FoldChange", yLabel = "Cycle of immunotherapy")  
+univScatter(data = subsetData, yData = "FCtfh", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
+            title = "AllYrs: Cycle of IT vs +/+ cTfh FC", yLabel= "ICOS+CD38+ cTfh FoldChange", xLabel = "Cycle of immunotherapy")  
 
 subsetData <- subset(mergedData, Cohort != "nonPD1")    
 FC_response <- dcast( subset(mergedData, TimeCategory != "oneWeek"), `Subject`+`Cohort`~`TimeCategory`, value.var = c("HAI.titer..H1N1pdm09.")) 
@@ -700,8 +699,6 @@ subsetData <- merge(x=FC_response, y=subsetData, by = "Subject")
 univScatter(data = subsetData, xData = "FChai", yData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
             title = "Cycle of IT vs HAI titer FC", xLabel= "HAI titer H1N1pdm09 FoldChange", yLabel = "Cycle of immunotherapy") + coord_cartesian(xlim = c(0,10))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/CycleIT_vs_HAItiterFC.pdf", device='pdf', width=6, height=6)
-
-
 
 
 subsetData <- subset(mergedData, TimeCategory != "oneWeek" & Cohort != "nonPD1" )
@@ -785,9 +782,24 @@ subsetData <- subsetData[which(!is.na( subsetData$value)), ]
 twoSampleBox(data=subsetData, xData="Cohort", yData="value", fillParam="Cohort", title="CXCL13 at oneWeek", yLabel="plasma CXCL13 (pg/mL)")
 twoSampleBar(data=subsetData, xData="Cohort", yData="value", fillParam="Cohort", title="CXCL13 at oneWeek", yLabel="plasma CXCL13 (pg/mL)") 
 aggregate( subsetData, by= list(subsetData$variable, subsetData$TimeCategory, subsetData$Cohort), FUN=mean, na.rm = T)
-
-
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/CXCL13_oW.pdf", device="pdf", height=7, width = 7)
+
+subsetData <- subset(melted, TimeCategory == "baseline")
+rownames(subsetData) <- seq(1:nrow(subsetData))
+twoSampleBox(data=subsetData, xData="Cohort", yData="value", fillParam="Cohort", title="CXCL13 at baseline", yLabel="plasma CXCL13 (pg/mL)")
+fit <- lm (value ~ Cohort, subsetData)  
+outlier <- which(cooks.distance(fit) == max(cooks.distance(fit))) ;  subsetData <- subsetData[ - as.numeric( names(outlier)), ]        # one row identified with high Cook's distance
+subsetData <- subsetData[which(!is.na( subsetData$value)), ]
+twoSampleBox(data=subsetData, xData="Cohort", yData="value", fillParam="Cohort", title="CXCL13 at baseline", yLabel="plasma CXCL13 (pg/mL)")
+twoSampleBar(data=subsetData, xData="Cohort", yData="value", fillParam="Cohort", title="CXCL13 at baseline", yLabel="plasma CXCL13 (pg/mL)") 
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/CXCL13_bL.pdf", device="pdf", height=7, width = 7)
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory != "late" )
+prePostTime(data = subsetData, xData = "TimeCategory", yData = "Plasma.CXCL13..pg.mL.", fillParam = "Cohort", title = "CXCL13 levels", xLabel = "TimeCategory",
+            yLabel = "plasma CXCL13 (pg/mL)", groupby = "Subject"); a + scale_y_continuous(trans='log2')
+
+
+
 
 
 subsetData <- subset(mergedData, Cohort == "aPD1" & TimeCategory == "oneWeek" )
@@ -829,7 +841,7 @@ seroconv <- dcast(subsetData, `Subject`+`Cohort`~`TimeCategory`, value.var = c("
 seroconv$FC <- seroconv$`late`/seroconv$`baseline`
 twoSampleBox(data=seroconv, xData="Cohort", yData="FC", fillParam="Cohort", title="All yrs: seroconversion", yLabel="Seroconversion factor") + scale_y_continuous(breaks=seq(0,99,4))
 twoSampleBar(data=seroconv, xData="Cohort", yData="FC", fillParam="Cohort", title="All yrs: seroconversion", yLabel="Seroconversion factor") + 
-  scale_y_continuous(breaks=seq(0,99,4))
+  scale_y_continuous(trans='log2',breaks=c(2^(1:14)))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/SeroconversionFactor.pdf", device = "pdf", width=6, height=6)
 
 
@@ -849,7 +861,6 @@ subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
 twoSampleBox(data=subsetData, xData="Cohort", yData="Plasma.CXCL13..pg.mL.", fillParam="Cohort", title="All yrs: Plasma CXCL13 at d21-28", yLabel="Plasma CXCL13 (pg/mL)")
 
 summary(lm( Plasma.CXCL13..pg.mL. ~ Cohort + Year + TimeCategory, data=mergedData))
-
 
 
 
@@ -880,6 +891,14 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
 univScatter(data = oneWeek, xData = "IgDlo_CD71hi_CD20loCD71hi.CD32hi...FreqParent", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
             title = "AllYrs: cTfh vs PB CD32hi at oneWeek", xLabel= "CD20lo - CD32hi frequency", yLabel = "ICOS+CD38+ cTfh frequency")
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_PB-71hi-20lo-d7_CD32_univ.pdf")
+
+oneWeek <- subset(mergedData, TimeCategory == "oneWeek" & cTfh_ICOShiCD38hi_..FreqParent > 1 & Cohort != "nonPD1")    #  *****   OUTLIER REMOVED
+subsetData1 <- subset(oneWeek, Cohort == "Healthy")    ; subsetData2 <- subset(oneWeek, Cohort == "aPD1")   
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "ActBCells...medfi.CD32.", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "AllYrs: cTfh vs ABC CD32 at oneWeek", xLabel= "ABC - CD32 medFI", yLabel = "ICOS+CD38+ cTfh frequency")
+univScatter(data = oneWeek, xData = "ActBCells...medfi.CD32.", yData = "cTfh_ICOShiCD38hi_..FreqParent", fillParam = "TimeCategory", 
+            title = "AllYrs: cTfh vs ABC CD32 at oneWeek", xLabel= "ABC - CD32 medFI", yLabel = "ICOS+CD38+ cTfh frequency")
+
 
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek" & cTfh_ICOShiCD38hi_..FreqParent > 1 & Cohort != "nonPD1")    #  *****   OUTLIER REMOVED
 subsetData1 <- subset(oneWeek, Cohort == "Healthy")    ; subsetData2 <- subset(oneWeek, Cohort == "aPD1")   

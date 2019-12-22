@@ -79,7 +79,7 @@ twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
 
 twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel)
 {
-  set.seed(101)
+  set.seed(102)
   fit <- lm(data[,yData] ~ data[,xData])
   pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
   if (! is.nan(pValue) )
@@ -109,7 +109,7 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel)
   return (
     ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
       geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
-      geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.1)) + 
+      geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() +
       theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
       annotation_custom(my_grob) + theme(legend.position = "none")
