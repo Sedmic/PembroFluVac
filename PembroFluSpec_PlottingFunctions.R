@@ -77,10 +77,11 @@ twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
   )
 }
 
-twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel)
+twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="none")
 {
   set.seed(102)
-  fit <- lm(data[,yData] ~ data[,xData])
+  if (batch == "none")  {  fit <- lm(data[,yData] ~ data[,xData]) }
+  if (batch != "none")  {  fit <- lm(data[,yData] ~ data[,xData] + data[,batch])    }
   pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
   if (! is.nan(pValue) )
   {
