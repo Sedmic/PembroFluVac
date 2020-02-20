@@ -55,12 +55,13 @@ coef(fit, fit$lambda.1se)
 
 
 #   DAY 7 as prediction for CONTINUOUS              
-runElasticNet <- function( data, testContinuous)
+runElasticNet <- function( data, testContinuous, oneWeekFlag="T")
 {
   testColumn <- testContinuous
   resultObject <- list()
   set.seed(102)
-  subsetData <- subset(data, TimeCategory == "oneWeek" & Cohort != "nonPD1" & Year == "3")
+  if (oneWeekFlag == 'T') {  subsetData <- subset(data, TimeCategory == "oneWeek" & Cohort != "nonPD1" & Year == "3") }
+  if (oneWeekFlag != 'T') { subsetData <- subset(data, TimeCategory == "late" & Cohort != "nonPD1" ) }
   exclude <- grep (paste(c("Subject","TimeCategory","Year","Label","Cohort","TimePoint.one","Sex","dummy", "Current.Immunotherapy","Cycle.of.Immunotherapy"), collapse="|"), colnames(subsetData), value = F)
   subsetData <- subsetData[, -exclude] 
   a <- sapply(subsetData, function (x) { sum(!is.na(x)) } )   # take away any columns that are purely NA
@@ -113,10 +114,11 @@ runElasticNet(data = mergedData, testContinuous = "cTfh_ICOShiCD38hi_..FreqParen
 runElasticNet(data = mergedData, testContinuous = "CD20loCD71hi...medfi.CD27.")[[3]]
 
 subsetData <- subset(mergedData, TimeCategory != "late" & Cohort != "nonPD1")
-FC_Tfhresponse <- dcast(subsetData, `Subject`+`Cohort`~`TimeCategory`, value.var = c("cTfh_ICOShiCD38hi_..FreqParent") ); 
-FC_Tfhresponse$FC <- FC_Tfhresponse$`oneWeek`/FC_Tfhresponse$`baseline`
-subsetData <- merge(x=subsetData, y=FC_Tfhresponse, by = c('Subject','Cohort'))
-runElasticNet(data = subsetData, testContinuous = "FC")[[3]]
+runElasticNet(data = subsetData, testContinuous = "FCtfh_oW", oneWeekFlag = "T")[[3]]
+subsetData <- subset(mergedData, TimeCategory != "late" & Cohort != "nonPD1")
+runElasticNet(data = subsetData, testContinuous = "FCPB_oW", oneWeekFlag = "T")[[3]]
+subsetData <- subset(mergedData, TimeCategory != "oneWeek" & Cohort != "nonPD1")
+runElasticNet(data = subsetData, testContinuous = "FChai_late", oneWeekFlag="F")[[3]]
 
 
 
