@@ -68,7 +68,7 @@ twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
   #  annotation_custom(my_grob) + theme(legend.position = "none") 
   
   return (
-    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
       geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
       geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.1)) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() +
@@ -108,7 +108,7 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
   #  annotation_custom(my_grob) + theme(legend.position = "none") 
   
   return (
-    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
       geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
       geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() +

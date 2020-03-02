@@ -549,6 +549,34 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
   coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_IL2STAT5_vs_cTfh_oW_biv.pdf", device="pdf", height=8, width=8)
 
+univScatter(data=pheno_RNA, xData = "HALLMARK_MITOTIC_SPINDLE", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+            fillParam = "TimeCategory", title = "+/+ cTfh vs GSVA Mitotic Spindle at oneWeek", xLabel= "GSVA score - Mitotic Spindle", yLabel = "ICOS+CD38+ cTfh frequency") + 
+  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_MitoticSpindle_vs_cTfh_oW_univ.pdf", device="pdf", height=8, width=8)
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "HALLMARK_MITOTIC_SPINDLE", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "+/+ cTfh vs GSVA Mitotic Spindle at oneWeek", xLabel= "GSVA score - Mitotic spindle", yLabel = "ICOS+CD38+ cTfh frequency") + 
+  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_MitoticSpindle_vs_cTfh_oW_biv.pdf", device="pdf", height=8, width=8)
+
+
+univScatter(data=pheno_RNA, xData = "HALLMARK_E2F_TARGETS", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+            fillParam = "TimeCategory", title = "+/+ cTfh vs GSVA E2F_TARGETS at oneWeek", xLabel= "GSVA score - E2F_TARGETS", yLabel = "ICOS+CD38+ cTfh frequency") + 
+  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_E2F_TARGETS_vs_cTfh_oW_univ.pdf", device="pdf", height=8, width=8)
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "HALLMARK_E2F_TARGETS", yData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "+/+ cTfh vs GSVA E2F_TARGETS at oneWeek", xLabel= "GSVA score - E2F_TARGETS", yLabel = "ICOS+CD38+ cTfh frequency") + 
+  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_E2F_TARGETS_vs_cTfh_oW_biv.pdf", device="pdf", height=8, width=8)
+
+
+
+
+
+
+
+
+
+
 
 
 

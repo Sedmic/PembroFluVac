@@ -106,7 +106,11 @@ FC_response <- merge(x=FC_response, y=FC_response2, by = "Subject")
 FC_response2 <- dcast( subset(mergedData, TimeCategory != "late" ), `Subject`+`Cohort`~`TimeCategory`, value.var = c("CD27hiCD38hi_..FreqParent")) 
 FC_response2$FCPB_oW <- FC_response2$`oneWeek`/FC_response2$`baseline`; FC_response2$Cohort <- NULL
 FC_response <- merge(x=FC_response, y=FC_response2, by = "Subject")
-FC_response <- FC_response[, c("Subject","Cohort","FChai_late","FCtfh_oW", "FCPB_oW")]
+FC_response2 <- dcast( subset(mergedData, TimeCategory != "late" ), `Subject`+`Cohort`~`TimeCategory`, value.var = c("Plasma.CXCL13..pg.mL.")) 
+FC_response2$FCCXCL13_oW <- FC_response2$`oneWeek`/FC_response2$`baseline`; FC_response2$Cohort <- NULL
+FC_response <- merge(x=FC_response, y=FC_response2, by = "Subject")
+
+FC_response <- FC_response[, c("Subject","Cohort","FChai_late","FCtfh_oW", "FCPB_oW", "FCCXCL13_oW")]
 mergedData <- merge(x = mergedData, y= FC_response, all=T, by = c('Subject', 'Cohort'))
 
 # write.csv(mergedData, file = "D:/Pembro-Fluvac/Analysis/mergedData/allMergedData.csv")
@@ -139,6 +143,7 @@ pheatmap(as.data.frame(t(simplifiedDataAvail)), cluster_col = F,color=gray.color
 #'
  
 table(mergedData$Cohort, mergedData$Sex, mergedData$Year)  
+table(serology$Cohort, serology$TimeCategory, serology$Year, !is.na(serology$HAI.titer..H1N1pdm09.))
 #pdf(file = "D:/Pembro-Fluvac/Analysis/Images/Cycle_of_immunotherapy.pdf")
 
 hist(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Cycle.of.Immunotherapy'], breaks = 50, col = "grey90",main = "Cycle of IT")   
@@ -701,16 +706,10 @@ univScatter(data = subsetData, yData = "cTfh_ICOShiCD38hi_..FreqParent", xData =
             title = "AllYrs: Cycle of IT vs +/+ cTfh at bL", yLabel= "ICOS+CD38+ cTfh freq", xLabel = "Cycle of immunotherapy") + coord_cartesian(ylim= c(0,8))
 summary(fit <- lm(Cycle.of.Immunotherapy ~ cTfh_ICOShiCD38hi_..FreqParent, subsetData))
 
-FC_response <- dcast( subset(mergedData, TimeCategory != "late" & cTfh_ICOShiCD38hi_..FreqParent > 0), `Subject`+`Cohort`~`TimeCategory`, value.var = c("cTfh_ICOShiCD38hi_..FreqParent")) 
-FC_response$FCtfh <- FC_response$`oneWeek`/FC_response$`baseline`; FC_response$Cohort <- NULL
-subsetData <- merge(x=FC_response, y=subsetData, by = "Subject")
-univScatter(data = subsetData, yData = "FCtfh", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
+univScatter(data = subsetData, yData = "FCtfh_ow", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
             title = "AllYrs: Cycle of IT vs +/+ cTfh FC", yLabel= "ICOS+CD38+ cTfh FoldChange", xLabel = "Cycle of immunotherapy")  
 
-FC_response <- dcast( subset(mergedData, TimeCategory != "late" & cTfh_ICOShiCD38hi_..FreqParent > 0), `Subject`+`Cohort`~`TimeCategory`, value.var = c("HAI.titer..H1N1pdm09.")) 
-FC_response$FChai <- FC_response$`late`/FC_response$`baseline`; FC_response$Cohort <- NULL
-subsetData <- merge(x=FC_response, y=subsetData, by = "Subject")
-univScatter(data = subsetData, yData = "FChai", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
+univScatter(data = subsetData, yData = "FChai_late", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
             title = "AllYrs: Cycle of IT vs HAI FC", yLabel= "H1N1pdm09 HAI FoldChange", xLabel = "Cycle of immunotherapy")  + coord_cartesian(ylim = c(0,50))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/CycleIT_vs_HAItiterFC.pdf", device='pdf', width=6, height=6)
 
@@ -764,7 +763,7 @@ fisher.test(continTable)
 
 seroprot <- data.frame( Cohort = c("Healthy", "aPD1"), Seroprot = c(HC_seroprot / HC_total, aPD1_seroprot / aPD1_total))
 seroprot$Cohort <- factor(seroprot$Cohort, levels = c("Healthy", "aPD1"))
-ggplot(data=seroprot, aes(x=Cohort, y=Seroprot, fill=Cohort)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+ggplot(data=seroprot, aes(x=Cohort, y=Seroprot, fill=Cohort,width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
   geom_bar( position = position_dodge(), stat = "identity") + ggtitle("Post-vaccine Seroprotection") + ylab("Proportion seroprotected") +  theme_bw() +
   theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
   theme(legend.position = "none") + coord_cartesian(ylim = c(0,1)) + scale_y_continuous(breaks = seq(0,1,0.1))
@@ -773,20 +772,17 @@ ggplot(data=seroprot, aes(x=Cohort, y=Seroprot, fill=Cohort)) + scale_fill_manua
 prePostTimeAveraged(melted, title = "HAI responses", xLabel = NULL, yLabel = "H1N1pdm09 HAI titer") + scale_y_continuous(trans = 'log2', breaks=c(2^(2:14)))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAIresponsesTimeAveraged.pdf", device = "pdf", width=7, height=7)
 
-subsetData <- subset(melted, TimeCategory == "late")
-twoSampleBarMelted(data=subsetData, xData="Cohort", yData="value", fillParam="Cohort", title="Late H1N1pdm09 HAI titer", yLabel="H1N1pdm09 HAI titer") + 
-  scale_y_continuous(trans = "log2",breaks=c(2^(2:14))) + coord_cartesian(ylim = c(4,4096))
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAItiter_late_byCohort.pdf", device="pdf", width=6, height=6)
-
-
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 prePostTime(data = subsetData, xData = "TimeCategory", yData = "HAI.titer..H1N1pdm09.", fillParam = "Cohort", title = "HAI titers over time", xLabel = "TimeCategory",
-            yLabel = "HAI titer", groupby = "Subject"); a + scale_y_continuous(trans='log2')
+            yLabel = "HAI titer", groupby = "Subject") + scale_y_continuous(trans='log2', breaks=2^(2:13))
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")
-twoSampleBar(data=subsetData, xData="Cohort", yData="HAI.titer..H1N1pdm09.", fillParam="Cohort", title="All yrs: HAI titers at d0", yLabel="H1N1pdm09 titer") + scale_y_continuous(trans='log2', breaks=c(2^(2:14) ) )
+twoSampleBar(data=subsetData, xData="Cohort", yData="HAI.titer..H1N1pdm09.", fillParam="Cohort", batch = "Year",title="All yrs: HAI titers at d0", yLabel="H1N1pdm09 titer") + 
+  scale_y_continuous(trans='log2', breaks=c(2^(2:14) ) ) +  coord_cartesian(ylim = c(4,8192))
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
-twoSampleBox(data=subsetData, xData="Cohort", yData="HAI.titer..H1N1pdm09.", fillParam="Cohort", title="All yrs: HAI titers at d21-28", yLabel="H1N1pdm09 titer") + scale_y_continuous(trans='log2' , breaks=c(2^(2:14) ) )
+twoSampleBar(data=subsetData, xData="Cohort", yData="HAI.titer..H1N1pdm09.", fillParam="Cohort", batch="Year", title="All yrs: HAI titers at d21-28", yLabel="H1N1pdm09 titer") + 
+  scale_y_continuous(trans='log2' , breaks=c(2^(2:15))) + coord_cartesian(ylim = c(4,8192))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAItiter_late_byCohort.pdf", device="pdf", width=6, height=6)
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 seroconv <- dcast(subsetData, `Subject`+`Cohort`~`TimeCategory`, value.var = c("HAI.titer..H1N1pdm09.")); 
@@ -832,28 +828,16 @@ aggregate( subsetData, by= list(subsetData$variable, subsetData$TimeCategory, su
 
 
 FC_response <- dcast( subset(mergedData, TimeCategory != "late" & Cohort != "nonPD1" ), `Subject`+`Cohort`~`TimeCategory`, value.var = c("Plasma.CXCL13..pg.mL.")) 
+FC_response$FCcxcl13 <- FC_response$oneWeek / FC_response$baseline
 t.test(FC_response[which(FC_response$Cohort == "aPD1"), "baseline"], FC_response[which(FC_response$Cohort == "aPD1"), "oneWeek"], paired = T)
 t.test(FC_response[which(FC_response$Cohort == "Healthy"), "baseline"], FC_response[which(FC_response$Cohort == "Healthy"), "oneWeek"], paired = T)
 
-subsetData <- merge(x=FC_response, y=subsetData, by = "Subject")
-twoSampleBar(data=subsetData, xData="Cohort", yData="FCcxcl13", fillParam="Cohort", title="CXCL13 fold-change", yLabel = "CXCL13 fold-change at oneWeek", batch="Year")
-univScatter(data = subsetData, yData = "FCcxcl13", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
-            title = "AllYrs: Cycle of IT vs CXCL13 FC", yLabel= "H1N1pdm09 HAI FoldChange", xLabel = "Cycle of immunotherapy")  + coord_cartesian(ylim = c(0,50))
 
-
-
-
-
-subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek" )[, c("Plasma.CXCL13..pg.mL.", "Subject", "Label")]
-subsetData2 <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late" )[, c("HAI.titer..H1N1pdm09.", "Subject", "Label","Cohort")]
-subsetData3 <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline" )[, c("HAI.titer..H1N1pdm09.", "Subject", "Label")]
-temp <- merge(x = subsetData, y=subsetData2, all=T, by = "Subject"); temp <- merge(x = temp, y = subsetData3, all=T, by="Subject", suffixes = c("", "bL"))
-temp1 <- temp[which(temp$Cohort == "Healthy"), ];  temp2 <- temp[which(temp$Cohort == "aPD1"), ]
-bivScatter(data1 = temp1, data2 = temp2, name1 = "HC", name2 = "aPD1", xData = "HAI.titer..H1N1pdm09.", yData="Plasma.CXCL13..pg.mL.", fillParam = "Cohort", 
-                 title = "CXCL13 oW vs HAI late", xLabel= "HAI titer - H1N1pdm09 at late", yLabel = "Plasma CXCL13 (pg/mL) at oW")
-
-summary(fit <- lm(temp$HAI.titer..H1N1pdm09. ~ temp$Plasma.CXCL13..pg.mL. + temp$HAI.titer..H1N1pdm09.bL + temp$Cohort ))
-
+univScatter(data = mergedData, yData = "FCCXCL13_oW", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
+            title = "AllYrs: Cycle of IT vs CXCL13 FC", yLabel= "H1N1pdm09 HAI FoldChange", xLabel = "Cycle of immunotherapy")  + coord_cartesian(ylim = c(0,2))
+univScatter(data = mergedData, yData = "FCCXCL13_oW", xData = "CD27hiCD38hi_..FreqParent", fillParam = "dummy", 
+            title = "AllYrs: PB response vs CXCL13 FC", yLabel= "CXCL13 FoldChange", xLabel = "CD27+CD38+ frequency") # + coord_cartesian(ylim = c(0,2))
+summary(lm( FCCXCL13_oW ~ FCtfh_oW + Cohort, data=mergedData))
 
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
@@ -863,18 +847,28 @@ univScatter(crossTimeCategory2, xData = "baseline_Plasma.CXCL13..pg.mL.", yData=
             title = "All yrs: Late HAI vs baseline CXCL13", xLabel= "baseline Plasma CXCL13 (pg/mL)", yLabel = "Late HAI titer - H1N1pdm09")   # nonstd appearance due to lack of fillParam
 univScatter(crossTimeCategory2, xData = "oneWeek_Plasma.CXCL13..pg.mL.", yData="late_HAI.titer..H1N1pdm09.", fillParam = NULL, 
             title = "All yrs: Late HAI vs d7 CXCL13", xLabel= "oneWeek Plasma CXCL13 (pg/mL)", yLabel = "Late HAI titer - H1N1pdm09")   # nonstd appearance due to lack of fillParam
+summary(lm( late_HAI.titer..H1N1pdm09. ~ oneWeek_Plasma.CXCL13..pg.mL. + baseline_HAI.titer..H1N1pdm09., data=crossTimeCategory2))
 
 
 
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
-prePostTime(subsetData, xData = "TimeCategory", yData = "Plasma.CXCL13..pg.mL.", fillParam = "Cohort", title = "CXCL13 over itme", xLabel = "TimeCategory",
-            yLabel = "HAI titer", groupby = "Subject") + scale_y_continuous(breaks=seq(0,150,5))     # limits = c(0,45)
+prePostTime(subsetData, xData = "TimeCategory", yData = "Plasma.CXCL13..pg.mL.", fillParam = "Cohort", title = "CXCL13 over time", xLabel = "TimeCategory",
+            yLabel = "Plasma CXCL13 (pg/mL)", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,20))     # limits = c(0,45)
 
 
 summary(lm( Plasma.CXCL13..pg.mL. ~ Cohort + Year + TimeCategory, data=mergedData))
 
 
+
+
+subsetData <- subset(mergedData, Cohort != "nonPD1" )
+subsetData$X1.Kd.HA <- 1/subsetData$X1.Kd.HA
+melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort','Year'), measure.vars = c("X1.Kd.HA"))
+prePostTimeAveraged(melted, title = "Affinity", xLabel = NULL, yLabel = "HA EC50 Kd (ug/mL)")# + scale_y_continuous(breaks=seq(0,99,5))
+univScatter(data = subsetData, xData = "X1.Kd.HA", yData = "HAI.titer..H1N1pdm09.", fillParam = "dummy", 
+            title = "HAI titer incr with affinity", xLabel= "HA EC50 Kd (ug/mL)", yLabel = "HAI titer - H1N1pdm09") + scale_y_continuous(trans = "log", breaks = 2^(1:12)) +coord_cartesian(ylim = c(2,4096))
+summary(lm( X1.Kd.HA ~ HAI.titer..H1N1pdm09. + Cohort + Year + TimeCategory, data=mergedData))
 
 
 #' ## ----------- Working with the medianFI for key transcription factors  --------------------
@@ -884,7 +878,8 @@ summary(lm( Plasma.CXCL13..pg.mL. ~ Cohort + Year + TimeCategory, data=mergedDat
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek")
 twoSampleBox(data=subsetData, xData="Cohort", yData="Ki67hiCD38hicTfh_medfi.Blimp1.", fillParam="Cohort", title="All yrs: Blimp1 in +/+ at d7", yLabel="Blimp1 median FI")
 twoSampleBox(data=subsetData, xData="Cohort", yData="Ki67hiCD38hicTfh_medfi.Bcl6..batchEffect", fillParam="Cohort", title="All yrs: Bcl6 in +/+ at d7", yLabel="Bcl6 median FI")
-
+subsetData$temp <- subsetData$Ki67hiCD38hicTfh_medfi.Bcl6..batchEffect / subsetData$Ki67hiCD38hicTfh_medfi.Blimp1.
+twoSampleBox(data=subsetData, xData="Cohort", yData="temp", fillParam="Cohort", title="Bcl6/Blimp1 ratio in +/+ at d7", yLabel="Bcl6/Blimp1 protein ratio")
 
 #' ## ----------- subset protein correlations  --------------------
 #'
@@ -953,8 +948,7 @@ TukeyHSD(fit)
 
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"); subsetData$X1.Kd.HA <- 1 / subsetData$X1.Kd.HA
-twoSampleBox(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohort", title="All yrs: HA EC50/Kd at baseline", yLabel="1 / Concentration (ug/mL)")
-twoSampleBar(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohort", title="All yrs: HA EC50/Kd at baseline", yLabel="1 / Concentration (ug/mL)")
+twoSampleBar(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohort", title="HA EC50/Kd at baseline", yLabel="1 / Concentration (ug/mL)")
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_baseLine.pdf", device="pdf", height=7, width=7)
 
 
@@ -968,6 +962,4 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
 
 
 
-
-twoSampleBox(data=subsetData, xData="Cohort", yData="CD27hiCD38hi_Ki67....FreqParent", fillParam="Cohort", title="All yrs: at oneWeek", yLabel="medFI Ki67")
 
