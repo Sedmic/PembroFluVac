@@ -1,6 +1,6 @@
 library("genefilter")
 library("ggplot2")
-library("grid")
+library("grid");  library("reshape2")
 library("ggrepel")
 library("RColorBrewer")
 library("DESeq2")
@@ -14,8 +14,9 @@ library("scales")
 library("gridExtra")
 library("GSVA")
 library("GSEABase")
+library("stringr")
 sessionInfo()
-source('D:/Pembro-Fluvac/Analysis/PembroFluSpec_Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
+source('D:/Pembro-Fluvac/Analysis/Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
 
 
 ## ***     read in data and make metaData  ************** 
@@ -570,8 +571,34 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
 
 
 
+# ----------- ----------- 
+
+#' ## -                           link RNAseq to phenotypic analysis 
+
+# ----------- ----------- 
+
+temp <- colnames(logDataMatrix)
+temp <- str_replace(temp, "^X","")
+temp <- str_replace(temp, "[.]","-")
+temp <- str_replace(temp, "_S..",""); temp <- str_replace(temp, "_S.","")
+temp <- str_replace(temp, "_bL","_baseline"); temp <- str_replace(temp, "_oW","_oneWeek");
+
+loadData <- function()   # run if mergedData not loaded yet
+{
+  mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/allMergedData.csv", stringsAsFactors = F, header = T, row.names = 1)
+  mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline", "oneWeek","late"))
+  mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
+  mergedData$dummy <- "dummy"
+  return(mergedData)
+}                     # mergedData <- loadData()
+
+temp2 <- logDataMatrix; colnames(temp2) <- temp; temp2 <- t(temp2)
 
 
+melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("CD19hi_NaiveB...FreqParent"))
+
+mergedData
+pheno_RNA <- merge(x = mergedData, y = temp, by = c("Cohort","Subject","TimeCategory"))
 
 
 
