@@ -46,7 +46,7 @@ logDataMatrix <- read.csv( file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/lo
 #' ##  global heatmap of relevant/interesting genes  --------
 probeGenes <- logDataMatrix[ c("CXCR5", "PRDM1",  "IFNG","MAF","CCR6","CXCR3","GATA3",
                "BTLA","TNFRSF4", "CD38","TIGIT","POU2AF1","MKI67","SH2D1A", "TOX2", "BIRC5", "TBK1", "CD19","MS4A1","FUT8","ST6GAL1","B4GALT1",
-               "JCHAIN","AICDA", "CMTM6", "AK9", "ZNF770","CD3E","CD4", "PAX5", "SDC1") , ]  # some genes taken from genomicscape.com
+               "JCHAIN", "CMTM6", "AK9", "ZNF770","CD3E","CD4", "PAX5", "SDC1") , ]  # some genes taken from genomicscape.com
 
 
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
@@ -56,10 +56,16 @@ pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col =
          #, filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/SelectedGenes_allSubsets_allTimePoints_allSubjects_heatmap.pdf"
          )
 
-
+# ----  genes in Tfh  --------
+probeGenes <- logDataMatrix[ c("TNFRSF18") , grep("HiHi",colnames(logDataMatrix)) ]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
+pheatmap(probeGenes, scale="none", cluster_col=T, cluster_row=F, annotation_col = annotation, annotation_colors= ann_colors,
+         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression - HiHi Tfh ")
 
 # ---- glycosylation genes in ABC --------
-probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1","AICDA") , grep("ABC",colnames(logDataMatrix)) ]
+
+probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1","MGAT3") , grep("ABC",colnames(logDataMatrix)) ]
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
@@ -67,36 +73,53 @@ pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col =
 
 metaX <- makeMetaData( colnames(probeGenes))
 singleGeneData <- merge(x = metaX, y = t(probeGenes[ "FUT8",]), by=0); colnames(singleGeneData)[7] <- "value"
-prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
-prePostTimeAveragedGene(singleGeneData, title = "ABC: FUT8 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
-  
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ABC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired = F)
+prePostTimeAveragedGene(singleGeneData, title = "FUT8 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+
 singleGeneData <- merge(x = metaX, y = t(probeGenes[ "ST6GAL1",]), by=0); colnames(singleGeneData)[7] <- "value"
-prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "ST6GAL1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
-prePostTimeAveragedGene(singleGeneData, title = "ABC: ST6GAL1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "ST6GAL1 in ABC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired = F)
+prePostTimeAveragedGene(singleGeneData, title = "ST6GAL1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "MGAT3",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "MGAT3 in ABC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired = F)
+prePostTimeAveragedGene(singleGeneData, title = "MGAT3 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
 
 singleGeneData <- merge(x = metaX, y = t(probeGenes[ "B4GALT1",]), by=0); colnames(singleGeneData)[7] <- "value"
-prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "B4GALT1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
-prePostTimeAveragedGene(singleGeneData, title = "ABC: B4GALT1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "B4GALT1 in ABC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired = F)
+prePostTimeAveragedGene(singleGeneData, title = "B4GALT1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
 
-# ---- glycosylation genes in PB --------
+# ---- glycosylation genes in ASC --------
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
-probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1") , grep("PB",colnames(logDataMatrix)) ]
+probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1", "MGAT3") , grep("PB",colnames(logDataMatrix)) ]
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression - PB ")
+         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression - ASC ")
 
 metaX <- makeMetaData( colnames(probeGenes))
 singleGeneData <- merge(x = metaX, y = t(probeGenes[ "FUT8",]), by=0); colnames(singleGeneData)[7] <- "value"
-prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
-prePostTimeAveragedGene(singleGeneData, title = "PB: FUT8 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ASC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired=F)
+prePostTimeAveragedGene(singleGeneData, title = "FUT8 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
 
 singleGeneData <- merge(x = metaX, y = t(probeGenes[ "ST6GAL1",]), by=0); colnames(singleGeneData)[7] <- "value"
-prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "ST6GAL1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
-prePostTimeAveragedGene(singleGeneData, title = "PB: ST6GAL1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "ST6GAL1 in ASC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired=F)
+prePostTimeAveragedGene(singleGeneData, title = "ST6GAL1 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "MGAT3",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "MGAT3 in ASC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired=F)
+prePostTimeAveragedGene(singleGeneData, title = "MGAT3 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
 
 singleGeneData <- merge(x = metaX, y = t(probeGenes[ "B4GALT1",]), by=0); colnames(singleGeneData)[7] <- "value"
-prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "B4GALT1 in ABC", xLabel = "TimeCategory", yLabel = "log2 counts")
-prePostTimeAveragedGene(singleGeneData, title = "PB: B4GALT1 transcripts", xLabel = "TimeCategory", yLabel = "log2 counts")
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "B4GALT1 in ASC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired=F)
+prePostTimeAveragedGene(singleGeneData, title = "B4GALT1 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
+
 
 
 # ---- glycosylation genes in NaiveB  --------

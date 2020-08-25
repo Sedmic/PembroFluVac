@@ -405,8 +405,6 @@ Yr3data <- cleanColumnNames(mergeDataYr3);  Yr3data$Year <- 3
 
 # combinedYrs <- merge(x=Yr3data, y=Yr2data, all=T)
 
-
-# write.csv(Yr3data, file = "../mergeData_TfhAnalyses.csv")   # year 3 only
 # write.csv(Yr3data, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Bflow_TmfiFromB_allyrs.csv")    # all years combined
 rm(mergeDataYr3)
 setwd(a) 
