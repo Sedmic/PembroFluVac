@@ -79,23 +79,43 @@ twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
   )
 }
 
-twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="none", position = "left")
+twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="none", position = "left", FCplot=F, confInt=F, ttest=T)
 {
   set.seed(102)
-  if (batch == "none")  {  fit <- lm(data = data, as.formula(paste(yData, xData, sep="~") )) }
-  if (batch != "none")  {  fit <- lm(data[,yData] ~ data[,xData] + data[,batch])    }
-  pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
-  if (! is.nan(pValue) )
+  if (ttest == T && batch == "none")
+  {
+    justforttest <- data[, c(xData,yData)]
+    fit <- rstatix::t_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
+    pValue <- fit$p
+  }
+  if (ttest == F || batch != "none")
+  {
+    if (batch == "none")  {  fit <- lm(data = data, as.formula(paste(yData, xData, sep="~") )) }
+    if (batch != "none")  {  fit <- lm(data[,yData] ~ data[,xData] + data[,batch])    }
+    pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
+  }
+  if (! is.nan(pValue) && confInt == T)
   {
     if (pValue < 0.01)
       {    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1), "\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")     }
     if (pValue >= 0.01)
     {    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: \n[",CI[1], ", ",CI[2], "]")      }
+    if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=24)))   }
+    if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.65,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=24)))   }
+    if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=24)))   }
   }
-  if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.88, hjust=0, gp=gpar(col="black", fontsize=24)))   }
-  if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.65,  y=0.88, hjust=0, gp=gpar(col="black", fontsize=24)))   }
-  if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=24)))   }
-  
+  if (! is.nan(pValue) && confInt == F)
+  {
+    if (pValue < 0.01)
+    {    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1))     }
+    if (pValue >= 0.01)
+    {    annotationInfo <- paste0("P = ", round(pValue, 2))      }
+    if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24)))   }
+    if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.65,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24)))   }
+    if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=24)))   }
+    
+  }
+
   if( ! is.factor(data[,xData])) {  data[,xData] <- factor(data[,xData])    }
   for (i in 1:length(levels(data[,xData])))
   {
@@ -110,8 +130,10 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
   #  ggtitle(title) + ylab(yLabel) +  theme_bw() +  theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
   #  annotation_custom(my_grob) + theme(legend.position = "none") 
   
+  if (FCplot == T)
   return (
-    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
+    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) + 
+      geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5) + 
       geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
       geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() +
@@ -119,6 +141,16 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
             plot.title = element_text(size=32,hjust = 0.5)) + 
       annotation_custom(my_grob) + theme(legend.position = "none")
   )
+  if (FCplot == F)
+    return (
+      ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) + 
+        geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+        geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
+        ggtitle(title) + ylab(yLabel) +  theme_bw() +
+        theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
+              plot.title = element_text(size=32,hjust = 0.5)) + 
+        annotation_custom(my_grob) + theme(legend.position = "none")
+    )
 }
 
 
@@ -204,9 +236,9 @@ prePostTimeAveraged <- function(data, title, xLabel, yLabel)
   overTime$SE <- overTime$SD / sqrt(overTime$N)
   # temp <- colnames(overTime); temp[which(temp == "x")] <- "Ave"; colnames(overTime) <- temp
   annotationInfo1 <- paste0(unique(overTime$Group.3)[1])   
-  my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.90, hjust=0, gp=gpar(col="#7FAEDB", fontsize=28)))
+  my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.93, hjust=0, gp=gpar(col="#7FAEDB", fontsize=28)))
   annotationInfo2 <- paste0(unique(overTime$Group.3)[2])   
-  my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.80, hjust=0, gp=gpar(col="#FFB18C", fontsize=28)))
+  my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.83, hjust=0, gp=gpar(col="#FFB18C", fontsize=28)))
   
   return(
     ggplot(data=overTime, aes(x=Group.2, y=Mean, group = Group.3, color=as.factor(Group.3))) + theme_bw() +   # group.1 = variable, Group.2 = TimeCategory, Group.3 = Cohort

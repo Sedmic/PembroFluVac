@@ -18,6 +18,15 @@ library("stringr")
 sessionInfo()
 source('D:/Pembro-Fluvac/Analysis/Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
 
+loadData <- function()    #  this function's actions are being done in the Ranalysis.R file, line 92
+{
+  mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/allMergedData.csv", stringsAsFactors = F, header = T, row.names = 1)
+  mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline", "oneWeek","late"))
+  mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
+  mergedData$dummy <- "dummy"
+  return(mergedData)
+}
+# mergedData <- loadData()        # run if mergedData isn't already loaded into the global environment
 
 ## ***     read in data and make metaData  ************** 
 dataMatrix <- read.table("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/PORTresults/NORMALIZED_DATA/SPREADSHEETS/FINAL_master_list_of_gene_counts_MIN.Fastqs.txt", sep="", 
@@ -57,7 +66,7 @@ pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col =
          )
 
 # ----  genes in Tfh  --------
-probeGenes <- logDataMatrix[ c("TNFRSF18") , grep("HiHi",colnames(logDataMatrix)) ]
+probeGenes <- logDataMatrix[ c("IL2RB","IL2RA","IL2RG") , grep("HiHi",colnames(logDataMatrix)) ]
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="none", cluster_col=T, cluster_row=F, annotation_col = annotation, annotation_colors= ann_colors,
@@ -542,7 +551,6 @@ setwd(workingDir)
 
 # ----------- ----------- 
 
-
 gsets <- getGmt("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GSEA/h.all.v7.0.symbols.gmt")
 HiHiv2 <- as.matrix( logDataMatrix[,grep("HiHi_oW",colnames(logDataMatrix))] )
 GSVAhallmark <- gsva(HiHiv2, gsets, method="gsva")
@@ -551,16 +559,8 @@ temp <- as.data.frame(t(GSVAhallmark))
 temp <- merge(x = temp, y = GSVAhallmarkmeta, by=0)
 temp$Subject <- str_replace(temp$Subject,"^X","")
 temp$Subject <- str_replace(temp$Subject, "[.]","-")
-loadData <- function()
-{
-  mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/allMergedData.csv", stringsAsFactors = F, header = T, row.names = 1)
-  mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline", "oneWeek","late"))
-  mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
-  mergedData$dummy <- "dummy"
-  return(mergedData)
-}
 
-# mergedData <- loadData()
+# mergedData <- loadData()    # see top of page for the function
 
 pheno_RNA <- merge(x = mergedData, y = temp, by = c("Cohort","Subject","TimeCategory"))
 univScatter(data=pheno_RNA, xData = "HALLMARK_IL2_STAT5_SIGNALING", yData="cTfh_ICOShiCD38hi_..FreqParent", 
@@ -606,28 +606,45 @@ temp <- str_replace(temp, "[.]","-")
 temp <- str_replace(temp, "_S..",""); temp <- str_replace(temp, "_S.","")
 temp <- str_replace(temp, "_bL","_baseline"); temp <- str_replace(temp, "_oW","_oneWeek");
 
-loadData <- function()   # run if mergedData not loaded yet
-{
-  mergedData <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/allMergedData.csv", stringsAsFactors = F, header = T, row.names = 1)
-  mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline", "oneWeek","late"))
-  mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
-  mergedData$dummy <- "dummy"
-  return(mergedData)
-}                     # mergedData <- loadData()
-
 temp2 <- logDataMatrix; colnames(temp2) <- temp; temp2 <- t(temp2)
 
+a <- do.call(rbind.data.frame, strsplit(rownames(temp2), "_")) 
+names(a) <- c("Subject", "Subset","TimeCategory")
+temp2 <- as.data.frame(cbind(temp2, a))
 
-melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("CD19hi_NaiveB...FreqParent"))
-
-mergedData
-pheno_RNA <- merge(x = mergedData, y = temp, by = c("Cohort","Subject","TimeCategory"))
-
-
-
-
+phenoRNAHiHi <-merge(x = subset(mergedData, Cohort != "nonPD1"), y = temp2[which(temp2$Subset == "HiHi"),], by = c("Subject","TimeCategory"), all.x = T )
+phenoRNAHiHi$Cohort <- factor(phenoRNAHiHi$Cohort, levels = c("aPD1","Healthy"))
+phenoRNAASC <-merge(x = mergedData, y = temp2[which(temp2$Subset == "PB"),], by = c("Subject","TimeCategory"), all.x = T )
 
 
+univScatter(data=phenoRNAHiHi, xData = "IFNG", yData="FChai_late", 
+            fillParam = "dummy", title = "+/+ cTfh vs GSVA E2F_TARGETS at oneWeek", xLabel= "GSVA score - E2F_TARGETS", yLabel = "ICOS+CD38+ cTfh frequency") 
+temp <- subset(phenoRNAHiHi, Cohort == "aPD1")
+cor_aPD1 <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$FChai_late, use="pairwise.complete.obs", method = "kendall" )
+cor_aPD1 <- as.data.frame(cbind(rownames(cor_aPD1), cor_aPD1));  cor_aPD1$V2 <- as.numeric(cor_aPD1$V2)
+temp <- subset(phenoRNAHiHi, Cohort == "Healthy")
+cor_HC <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$FChai_late, use="pairwise.complete.obs", method = "kendall")
+cor_HC <- as.data.frame(cbind(rownames(cor_HC), cor_HC));  cor_HC$V2 <- as.numeric(cor_HC$V2)
+
+
+subsetData1 <- subset(phenoRNAHiHi, Cohort == "Healthy" & TimeCategory == "oneWeek"); subsetData2 <- subset(phenoRNAHiHi, Cohort == "aPD1" & TimeCategory == "oneWeek")
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "ITCH", yData="FChai_late", 
+           fillParam = "Cohort", title = "HAI vs CD23 at oneWeek", xLabel= "CD23+ (% CD19)", yLabel = "Fold-change HAI (late)") 
+
+
+
+
+temp <- subset(phenoRNAASC, Cohort == "aPD1")
+cor_aPD1 <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$IgG1sial_oW, use="pairwise.complete.obs", method = "kendall" )
+cor_aPD1 <- as.data.frame(cbind(rownames(cor_aPD1), cor_aPD1));  cor_aPD1$V2 <- as.numeric(cor_aPD1$V2)
+temp <- subset(phenoRNAASC, Cohort == "Healthy")
+cor_HC <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$IgG1sial_oW, use="pairwise.complete.obs", method = "kendall")
+cor_HC <- as.data.frame(cbind(rownames(cor_HC), cor_HC));  cor_HC$V2 <- as.numeric(cor_HC$V2)
+
+
+subsetData1 <- subset(phenoRNAASC, Cohort == "Healthy" & TimeCategory == "oneWeek"); subsetData2 <- subset(phenoRNAASC, Cohort == "aPD1" & TimeCategory == "oneWeek")
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "JCHAIN", yData="IgG1sial_oW", 
+           fillParam = "Cohort", title = "HAI vs CD23 at oneWeek", xLabel= "CD23+ (% CD19)", yLabel = "Fold-change HAI (late)") 
 
 
 
