@@ -15,6 +15,7 @@ library("gridExtra")
 library("GSVA")
 library("GSEABase")
 library("stringr")
+library("dplyr")
 sessionInfo()
 source('D:/Pembro-Fluvac/Analysis/Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
 
@@ -74,7 +75,7 @@ pheatmap(probeGenes, scale="none", cluster_col=T, cluster_row=F, annotation_col 
 
 # ---- glycosylation genes in ABC --------
 
-probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1","MGAT3") , grep("ABC",colnames(logDataMatrix)) ]
+probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1","MGAT3","NEU1","GLB1") , grep("ABC",colnames(logDataMatrix)) ]
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
@@ -104,7 +105,7 @@ prePostTimeAveragedGene(singleGeneData, title = "B4GALT1 in ABC", xLabel = "Time
 # ---- glycosylation genes in ASC --------
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
-probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1", "MGAT3") , grep("PB",colnames(logDataMatrix)) ]
+probeGenes <- logDataMatrix[ c("FUT8","ST6GAL1","B4GALT1", "MGAT3","NEU1","GLB1") , grep("PB",colnames(logDataMatrix)) ]
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
          fontsize_row = 12, color=inferno(100), main = "Log counts gene expression - ASC ")
 
@@ -128,6 +129,16 @@ singleGeneData <- merge(x = metaX, y = t(probeGenes[ "B4GALT1",]), by=0); colnam
 prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "B4GALT1 in ASC", xLabel = "TimeCategory", 
                 yLabel = "log2 counts", paired=F)
 prePostTimeAveragedGene(singleGeneData, title = "B4GALT1 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "NEU1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "NEU1 in ASC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired=F)
+prePostTimeAveragedGene(singleGeneData, title = "NEU1 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
+
+singleGeneData <- merge(x = metaX, y = t(probeGenes[ "GLB1",]), by=0); colnames(singleGeneData)[7] <- "value"
+prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "GLB1 in ASC", xLabel = "TimeCategory", 
+                yLabel = "log2 counts", paired=F)
+prePostTimeAveragedGene(singleGeneData, title = "GLB1 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
 
 
 
@@ -612,9 +623,9 @@ a <- do.call(rbind.data.frame, strsplit(rownames(temp2), "_"))
 names(a) <- c("Subject", "Subset","TimeCategory")
 temp2 <- as.data.frame(cbind(temp2, a))
 
-phenoRNAHiHi <-merge(x = subset(mergedData, Cohort != "nonPD1"), y = temp2[which(temp2$Subset == "HiHi"),], by = c("Subject","TimeCategory"), all.x = T )
+phenoRNAHiHi <- left_join(x = subset(mergedData, Cohort != "nonPD1"), y = temp2[which(temp2$Subset == "HiHi"),], by = c("Subject","TimeCategory"), all.x = T )
 phenoRNAHiHi$Cohort <- factor(phenoRNAHiHi$Cohort, levels = c("aPD1","Healthy"))
-phenoRNAASC <-merge(x = mergedData, y = temp2[which(temp2$Subset == "PB"),], by = c("Subject","TimeCategory"), all.x = T )
+phenoRNAASC <- left_join(x = mergedData, y = temp2[which(temp2$Subset == "PB"),], by = c("Subject","TimeCategory"), all.x = T )
 
 
 univScatter(data=phenoRNAHiHi, xData = "IFNG", yData="FChai_late", 
@@ -644,7 +655,14 @@ cor_HC <- as.data.frame(cbind(rownames(cor_HC), cor_HC));  cor_HC$V2 <- as.numer
 
 subsetData1 <- subset(phenoRNAASC, Cohort == "Healthy" & TimeCategory == "oneWeek"); subsetData2 <- subset(phenoRNAASC, Cohort == "aPD1" & TimeCategory == "oneWeek")
 bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "JCHAIN", yData="IgG1sial_oW", 
-           fillParam = "Cohort", title = "HAI vs CD23 at oneWeek", xLabel= "CD23+ (% CD19)", yLabel = "Fold-change HAI (late)") 
+           fillParam = "Cohort", title = "IgGsial vs JCHAIN at oneWeek", xLabel= "JCHAIN", yLabel = "Fold-change IgG1 sial", statsOff = T) 
+
+
+
+
+subsetData1 <- subset(phenoRNAASC, Cohort == "Healthy" ); subsetData2 <- subset(phenoRNAASC, Cohort == "aPD1" )
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "GLB1", yData="IgG1sial_oW", 
+           fillParam = "Cohort", title = "IgGsial vs GLB1 at oneWeek", xLabel= "GLB1", yLabel = "Fold-change IgG1 sial") 
 
 
 

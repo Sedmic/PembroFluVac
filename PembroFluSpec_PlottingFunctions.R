@@ -100,9 +100,9 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
       {    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1), "\n", "Mean 95%CI: [",CI[1], ", ",CI[2], "]")     }
     if (pValue >= 0.01)
     {    annotationInfo <- paste0("P = ", round(pValue, 2),"\n", "Mean 95%CI: \n[",CI[1], ", ",CI[2], "]")      }
-    if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=24)))   }
-    if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.65,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=24)))   }
-    if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=24)))   }
+    if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))   }
+    if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.65,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))   }
+    if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=1)))   }
   }
   if (! is.nan(pValue) && confInt == F)
   {
@@ -110,9 +110,9 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
     {    annotationInfo <- paste0("P = ", formatC(pValue, format="e",digits=1))     }
     if (pValue >= 0.01)
     {    annotationInfo <- paste0("P = ", round(pValue, 2))      }
-    if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24)))   }
-    if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.65,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24)))   }
-    if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=24)))   }
+    if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=28)))   }
+    if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.65,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=28)))   }
+    if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=1)))   }
     
   }
 
@@ -173,31 +173,50 @@ univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
       annotation_custom(my_grob) + theme(legend.position = "none")     )
 }
 
-bivScatter <- function(data1, data2, name1, name2, xData, yData, fillParam, title, xLabel, yLabel)
+bivScatter <- function(data1, data2, name1, name2, xData, yData, fillParam, title, xLabel, yLabel, statsOff = F)
 {
-  pearson1 <- round(cor(data1[,xData], data1[,yData], method = "pearson", use = "complete.obs"), 2)
-  pValue1 <- cor.test(data1[,xData], data1[,yData], method="pearson")
-  pearson2 <- round(cor(data2[,xData], data2[,yData], method = "pearson", use = "complete.obs"), 2)
-  pValue2 <- cor.test(data2[,xData], data2[,yData], method="pearson")
-  if (pValue1$p.value < 0.01 | pValue2$p.value < 0.01)   {    
-    annotationInfo1 <- paste0(name1, " Pearson r = ", pearson1,"\n","P = ", formatC(pValue1$p.value, format="e", digits=1) )
-    annotationInfo2 <- paste0("\n", name2, " Pearson r = ", pearson2,"\n","P = ", formatC(pValue2$p.value, format="e", digits=1) )  }
-  if (pValue1$p.value >= 0.01 & pValue2$p.value >= 0.01) {    
-    annotationInfo1 <- paste0(name1, " Pearson r = ", pearson1,"\n","P = ", round(pValue1$p.value,2) )
-    annotationInfo2 <- paste0("\n",name2," Pearson r = ", pearson2, "\n","P = ", round(pValue2$p.value,2))   }
-  my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.88, hjust=0, gp=gpar(col="#7FAEDB", fontsize=28)))
-  my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.75, hjust=0, gp=gpar(col="#FFB18C", fontsize=28)))
-  return (
-    ggplot() + 
-      geom_point(data = data1, aes_string(x=xData, y=yData, fill= fillParam), size=8, color="black", pch=21) + theme_bw() + 
-      geom_point(data = data2, aes_string(x=xData, y=yData, fill=fillParam), size=8, color="black", pch=21) + theme_bw() + 
-      geom_smooth(data = data1, aes_string(x=xData, y=yData, color=fillParam, fill=NA), method='lm', fullrange=T) +
-      geom_smooth(data = data2, aes_string(x=xData, y=yData, color=fillParam, fill=NA), method='lm', fullrange=T) +
-      scale_color_manual(values=c("#FFB18C", "#7FAEDB")) + 
-      scale_fill_manual(values=c("#FFB18C", "#7FAEDB")) + 
-      ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
-      theme(axis.text = element_text(size=28,hjust = 0.5,color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
-      annotation_custom(my_grob1) + annotation_custom(my_grob2) + theme(legend.position = "none")     )
+  if (statsOff == F)
+  {  
+    pearson1 <- round(cor(data1[,xData], data1[,yData], method = "pearson", use = "complete.obs"), 2)
+    pValue1 <- cor.test(data1[,xData], data1[,yData], method="pearson")
+    pearson2 <- round(cor(data2[,xData], data2[,yData], method = "pearson", use = "complete.obs"), 2)
+    pValue2 <- cor.test(data2[,xData], data2[,yData], method="pearson")
+    if (pValue1$p.value < 0.01 | pValue2$p.value < 0.01)   {    
+      annotationInfo1 <- paste0(name1, " Pearson r = ", pearson1,"\n","P = ", formatC(pValue1$p.value, format="e", digits=1) )
+      annotationInfo2 <- paste0("\n", name2, " Pearson r = ", pearson2,"\n","P = ", formatC(pValue2$p.value, format="e", digits=1) )  }
+    if (pValue1$p.value >= 0.01 & pValue2$p.value >= 0.01) {    
+      annotationInfo1 <- paste0(name1, " Pearson r = ", pearson1,"\n","P = ", round(pValue1$p.value,2) )
+      annotationInfo2 <- paste0("\n",name2," Pearson r = ", pearson2, "\n","P = ", round(pValue2$p.value,2))   }
+    my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.88, hjust=0, gp=gpar(col="#7FAEDB", fontsize=28)))
+    my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.75, hjust=0, gp=gpar(col="#FFB18C", fontsize=28)))
+    return (
+      ggplot() + 
+        geom_point(data = data1, aes_string(x=xData, y=yData, fill= fillParam), size=8, color="black", pch=21) + theme_bw() + 
+        geom_point(data = data2, aes_string(x=xData, y=yData, fill=fillParam), size=8, color="black", pch=21) + theme_bw() + 
+        geom_smooth(data = data1, aes_string(x=xData, y=yData, color=fillParam, fill=NA), method='lm', fullrange=T) +
+        geom_smooth(data = data2, aes_string(x=xData, y=yData, color=fillParam, fill=NA), method='lm', fullrange=T) +
+        scale_color_manual(values=c("#FFB18C", "#7FAEDB")) + 
+        scale_fill_manual(values=c("#FFB18C", "#7FAEDB")) + 
+        ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
+        theme(axis.text = element_text(size=28,hjust = 0.5,color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
+        annotation_custom(my_grob1) + annotation_custom(my_grob2) + 
+        theme(legend.position = "none")     )
+  }
+  if (statsOff == T)
+  {  
+    return (
+      ggplot() + 
+        geom_point(data = data1, aes_string(x=xData, y=yData, fill= fillParam), size=8, color="black", pch=21) + theme_bw() + 
+        geom_point(data = data2, aes_string(x=xData, y=yData, fill=fillParam), size=8, color="black", pch=21) + theme_bw() + 
+        geom_smooth(data = data1, aes_string(x=xData, y=yData, color=fillParam, fill=NA), method='lm', fullrange=T) +
+        geom_smooth(data = data2, aes_string(x=xData, y=yData, color=fillParam, fill=NA), method='lm', fullrange=T) +
+        scale_color_manual(values=c("#FFB18C", "#7FAEDB")) + 
+        scale_fill_manual(values=c("#FFB18C", "#7FAEDB")) + 
+        ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
+        theme(axis.text = element_text(size=28,hjust = 0.5,color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
+        #annotation_custom(my_grob1) + annotation_custom(my_grob2) + 
+        theme(legend.position = "none")     )
+  }
 }
 
 
@@ -235,13 +254,13 @@ prePostTimeAveraged <- function(data, title, xLabel, yLabel)
   overTime <- temp3
   overTime$SE <- overTime$SD / sqrt(overTime$N)
   # temp <- colnames(overTime); temp[which(temp == "x")] <- "Ave"; colnames(overTime) <- temp
-  annotationInfo1 <- paste0(unique(overTime$Group.3)[1])   
-  my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.93, hjust=0, gp=gpar(col="#7FAEDB", fontsize=28)))
-  annotationInfo2 <- paste0(unique(overTime$Group.3)[2])   
-  my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.83, hjust=0, gp=gpar(col="#FFB18C", fontsize=28)))
+  annotationInfo1 <- paste0(unique(overTime$Group.3)[1])  # aPD1 group should get the peach FFB18C color
+  my_grob1 = grobTree(textGrob(annotationInfo1, x=0.05,  y=0.93, hjust=0, gp=gpar(col="#FFB18C", fontsize=28)))
+  annotationInfo2 <- paste0(unique(overTime$Group.3)[2])  # healthy group should get the blue 7FAEDB color
+  my_grob2 = grobTree(textGrob(annotationInfo2, x=0.05,  y=0.83, hjust=0, gp=gpar(col="#7FAEDB", fontsize=28)))
   
   return(
-    ggplot(data=overTime, aes(x=Group.2, y=Mean, group = Group.3, color=as.factor(Group.3))) + theme_bw() +   # group.1 = variable, Group.2 = TimeCategory, Group.3 = Cohort
+    ggplot(data=overTime, aes(x=Group.2, y=Mean, group = Group.3, color=Group.3)) + theme_bw() +   # group.1 = variable, Group.2 = TimeCategory, Group.3 = Cohort
       geom_ribbon(aes(x=Group.2, ymin=Mean-SE, ymax=Mean+SE, fill=Group.3), alpha=0.1) + 
       geom_line(aes(size=3)) +  
       geom_point(aes(size=4, fill=Group.3), pch=21) + 
