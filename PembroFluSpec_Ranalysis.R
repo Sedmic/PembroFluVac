@@ -13,7 +13,7 @@ library("rstatix")
 library("dplyr")
 library("tidyr")
 
-source('D:/Pembro-Fluvac/Analysis/Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
+source('D:/Pembro-Fluvac/Analysis/Ranalysis/PembroFluSpec_PlottingFunctions.R')
 
 
 #' ## ----------- merge & qc data from spreadsheets  --------------------
@@ -151,10 +151,10 @@ pheatmap(as.data.frame(t(simplifiedDataAvail)), cluster_col = F,color=gray.color
  
 table(mergedData$Cohort, mergedData$Sex, mergedData$Year)  
 table(serology$Cohort, serology$TimeCategory, serology$Year, !is.na(serology$H1N1pdm09.HAI.titer))
-#pdf(file = "D:/Pembro-Fluvac/Analysis/Images/Cycle_of_immunotherapy.pdf")
+ggplot( data = subset(mergedData, Cohort == "aPD1" & TimeCategory == "baseline"), aes(x=Cycle.of.Immunotherapy)) + geom_histogram(color="white",fill="#56B4E9") + 
+  theme_bw() + theme(axis.text=element_text(color="black",size=14), axis.title=element_text(color="black",size=16)) + scale_x_continuous(breaks=seq(0,30,5)) 
+ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/CyclesImmunotherapy.pdf", device = 'pdf')
 
-hist(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Cycle.of.Immunotherapy'], breaks = 50, col = "grey90",main = "Cycle of IT")   
-# dev.off()
 median(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Cycle.of.Immunotherapy'], na.rm = T)  
 paste("Median Age aPD1: ", median(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)  )
 paste("Median Age Healthy: ", median(mergedData[which(mergedData$Cohort == "Healthy" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)   )
@@ -283,10 +283,15 @@ prePostTime(data = subsetData, xData = "TimeCategory", yData = "cTfh_ICOShiCD38h
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfhResp_overTime_PerSubject.pdf", width = 8)
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("cTfh_ICOShiCD38hi_..FreqParent"))
+melted <- melted[which(melted$TimeCategory != 'late'),]
 prePostTimeAveraged(data = subset(melted, TimeCategory != "late"), title = "cTfh", xLabel = NULL, yLabel = "ICOS+CD38+ (% CD4+CXCR5+)") + 
   scale_y_continuous(breaks=seq(1,10,0.5), limits=c(3.5, 7))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfhResp_overTime_freqcTfh.pdf", width=4)
-summary( fit <- lm(formula = value ~ Cohort * TimeCategory, data = subset(melted, TimeCategory != "late")) ); tukey_hsd(fit)
+summary( fit <- lm(formula = value ~ Cohort * TimeCategory, data = subset(melted, TimeCategory != "late")) ); 
+stress.aov <- aov(data = melted, formula = value ~ Cohort * TimeCategory )
+Anova(stress.aov)
+melted %>% group_by(Cohort) %>% kruskal_test(formula = value ~ TimeCategory)
+
 #************** different denominator *********************
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 subsetData$cTfh_ICOShiCD38hi_..FreqParent <- subsetData$cTfh_ICOShiCD38hi_..FreqParent * subsetData$cTfh_..FreqParent * subsetData$Live_CD3..CD4..Nonnaive...FreqParent /10000

@@ -15,6 +15,11 @@ library(RColorBrewer)
 library(reshape2)
 library(tibble)
 library(pheatmap)
+Spectre::package.check()
+Spectre::package.load()
+library(dplyr)
+library(rstatix)
+
 
 # function to choose markers to use in your analysis (do not need to change anything here)
 choose.markers <- function(exp_data) {
@@ -88,7 +93,7 @@ separateUMAPplots <- function (analysis.data, fcs.files)
 # with help from https://github.com/cytolab/roe_phospho_flow/blob/master/01_data_analysis.Rmd
 
 
-COFACTOR_FOR_ARCSINH_SCALE <- 5          # set cofactor for all channels
+COFACTOR_FOR_ARCSINH_SCALE <- 1000          # set cofactor for all channels
 NUMBER_OF_CELLS_TO_SAMPLE_PER_FILE <- 10000     # choose number of cells to sample per file 
 # (if you want proportional sampling, enter a number larger than the max number of cells in a single file)
 TARGET_NUMBER_OF_CLUSTERS <- 20          # choose target number of clusters for FlowSOM
@@ -179,13 +184,13 @@ assignInNamespace(   x = "draw_colnames",   value = "draw_colnames_65",   ns = a
 
 pheatmap(clusterSummary, scale = "column", cluster_rows = F, color=viridis::inferno(100), main="Cluster expression for all subjects", fontsize=14, 
          border_color = "grey30", cellwidth = 19, angle_col = 90,
-          filename = "D:/Pembro-Fluvac/Analysis/Images/FlowSOM_clusterComparison_byCohort_nonnavB_d0_heatmap.pdf",
+         # filename = "D:/Pembro-Fluvac/Analysis/Images/FlowSOM_clusterComparison_byCohort_nonnavB_d0_heatmap.pdf",
          )  
 dev.off()
 
 propClusters %>% group_by(cluster) %>% rstatix::t_test(data= ., formula =  freq ~ Cohort) %>% rstatix::adjust_pvalue(method = 'fdr')
-propClusters %>% group_by(cluster==1) %>% rstatix::t_test(data= ., formula =  freq ~ Cohort)
-propClusters %>% group_by(cluster==18) %>% rstatix::t_test(data= ., formula =  freq ~ Cohort)
+# propClusters %>% group_by(cluster==1) %>% rstatix::t_test(data= ., formula =  freq ~ Cohort)
+# propClusters %>% group_by(cluster==18) %>% rstatix::t_test(data= ., formula =  freq ~ Cohort)
 
 writeFCSfiles( analysis.data, umap.markers, orig_names)
 
@@ -292,8 +297,91 @@ writeFCSfiles( analysis.data, umap.markers, orig_names)
 # placeholder
 
 
+##  *********************************************************************************************************************************************************
+##  *********************************************************************************************************************************************************
+##  *********************************************************************************************************************************************************
+
+# library('devtools')
+# install_github("immunedynamics/spectre")
+
+PrimaryDirectory <- getwd()
+setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/exportNonnavB/d0/spectre/data");  InputDirectory <- getwd()
+setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/exportNonnavB/d0/spectre/metadata");  MetaDirectory <- getwd()
+setwd("D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/exportNonnavB/d0/spectre/output");  OutputDirectory <- getwd()
+data.list <- Spectre::read.files(file.loc = InputDirectory, file.type = '.fcs', do.embed.file.names = T)
+do.list.summary(data.list)
+exclude <- grep(pattern = paste(c("029_d0"),collapse='|'), names(data.list))
+minCells <- min(unlist(do.list.summary(data.list[-exclude])$nrow.check))  # need to downsample so that there is equal representation of each sample
+temp <- lapply(data.list[-exclude], function(x) do.subsample(x, minCells, seed=1))
+
+cell.dat <- Spectre::do.merge.files(dat = temp)          
+setwd(InputDirectory);  oneFCS <- flowCore::read.FCS(filename = "export_PBMCs_19616-017_d0_001_NonnaiveB.fcs")
+namesFCS <- oneFCS@parameters$desc
+namesFCS[1:6] <- names(cell.dat)[1:6]         # manually confirmed these are the same parameters and in the same order
+names(cell.dat)[1:32] <- namesFCS[1:32]       # move the human-readable labels over to cell.dat after manually confirming channels are in filter + alphabetical order
+names(cell.dat)
+cell.dat <- do.asinh(dat = cell.dat, use.cols = names(cell.dat)[c(7:32)], cofactor = 1000)
+transformed.cols <- paste0(names(cell.dat)[c(7:32)], "_asinh")
+# for(i in transformed.cols){   make.colour.plot(do.subsample(cell.dat, 20000), i, "Bcl6") }
+setwd(MetaDirectory)
+meta.data <- fread(input = "sample.details_fcs.csv")
+cell.dat <- do.add.cols(dat = cell.dat, base.col = "FileName", add.dat = meta.data, add.by = "Filename", rmv.ext = TRUE)
+cellular.cols <- names(cell.dat)[c(36:40,42,44:55,57:61)]            # choose the arcsinh-transformed columns as the source data
+#  chosen markers:  CD27, Bcl6, IgD, CD32, IgM, CD86, CD138, CD38, Blimp1, CD11c, CD71, CXCR4, CD21, CXCR5, CD16, CD23, CD80, Tbet, Ki67, CD20        
+# cluster.cols <- names(cell.dat)[c(36:40,44:52,54:55,57:61)]             # specify which columns to cluster
+cluster.cols <- names(cell.dat)[grep(pattern = paste0(c("CD86_asinh", "CD71_asinh","CD38_asinh", "Tbet_asinh",
+                                                        "CD20_asinh","Ki67_asinh","CXCR5_asinh","CXCR4_asinh",
+                                                        "CD21_asinh","CD138_asinh","IgD_asinh", "CD11c_asinh"), collapse = '|'), names(cell.dat), value = F)]  
+exp.name <- "CNS experiment"; sample.col <- "Sample"; group.col <- "Group"; batch.col <- "Batch"
+data.frame(table(cell.dat[[group.col]]))
+cell.flowSOM <- run.flowsom(cell.dat, cluster.cols, meta.k = 15, meta.seed=1, clust.seed = 1)       # renaming now to cell.flowSOM in case of re-clustering later
+sub.targets <- c(5000, 5000)
+cell.sub <- do.subsample(dat = cell.flowSOM, sub.targets, group.col, seed = 1)
+cell.sub <- run.umap(cell.sub, cluster.cols)
+setwd(OutputDirectory)
+make.colour.plot(cell.sub, "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", col.type = 'factor', add.label = TRUE, filename = "UMAP_FlowSOM_k20_allSubj.pdf")
+make.multi.plot(cell.sub, "UMAP_X", "UMAP_Y", cluster.cols, filename="UMAP_FlowSOM_perChannel_overlay.pdf")
+
+make.multi.plot(cell.sub, "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", group.col, col.type = 'factor')
+make.colour.plot(subset(cell.sub, Group=="Healthy"), "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", col.type = 'factor', add.label = TRUE, filename = "UMAP_FlowSOM_k20_Healthy.pdf")
+make.colour.plot(subset(cell.sub, Group=="aPD1"), "UMAP_X", "UMAP_Y", "FlowSOM_metacluster", col.type = 'factor', add.label = TRUE, filename = "UMAP_FlowSOM_k20_aPD1.pdf")
+
+exp <- do.aggregate(cell.flowSOM, cellular.cols, by = "FlowSOM_metacluster")
+make.pheatmap(exp, "FlowSOM_metacluster", cellular.cols, standard.colours = "inferno", file.name = "Pheatmap_flowSOM_metacluster.pdf" )
+dev.off()
+# write.sumtables(dat = cell.flowSOM, sample.col = sample.col,  measure.col = cellular.cols, annot.col = c(group.col, batch.col), group.col = group.col, do.proportions = TRUE, do.mfi.per.sample = FALSE, do.mfi.per.marker = TRUE)
+
+propClust.Spect <-cell.flowSOM[,-c(1:33)] %>% group_by(FileName, FlowSOM_metacluster) %>% summarize(n=n()) %>% mutate(freq = n/sum(n))
+# propClusters <- analysis.data[,-c(1:6,14,33:34,36:37)] %>% group_by(File_ID, cluster)  %>% summarize(n=n())  %>% mutate(freq = n/sum(n))
+propClust.Spect$n <- NULL
+# propClusters$File_ID <- sapply(propClusters$File_ID, function(x) { fcs.files[x] } )
+propClust.Spect$Cohort <- "HC"; propClust.Spect$Cohort[grep("19616",propClust.Spect$FileName, value = F)] <- "aPD1"
+propClust.Spect$FlowSOM_metacluster <- factor(propClust.Spect$FlowSOM_metacluster)
+ggplot(propClust.Spect, aes(x=FlowSOM_metacluster, y=freq, group=Cohort, color=Cohort)) + # stat_smooth(method="loess",span=0.1,se=TRUE, aes(fill=Cohort), alpha=0.1) + 
+  theme_bw() + stat_summary(fun="median", geom="bar", position = position_dodge(width=1), aes(fill=Cohort)) + geom_jitter(position = position_dodge(width=1), color='black') + 
+  #geom_bar(stat = 'summary', position=position_dodge(width=1), aes(fill=Cohort)) + geom_jitter(position = position_dodge(width=1), color='black') + 
+  ggtitle("Nonnaive B cells at baseline") + ylab("Frequency (% nonnaive B") + xlab("FlowSOM cluster") + 
+  scale_fill_manual(values = c("#FFB18C", "#7FAEDB")) + scale_color_manual(values = c("#FFB18C", "#7FAEDB" )) + 
+  theme(axis.text.x = element_text(angle=45,vjust = 0.9, hjust=1), axis.text = element_text(size=12), axis.title = element_text(size=14), title = element_text(size=24),
+        legend.text = element_text(size=12), legend.title = element_text(size=14))
+ggsave(filename = "D:/Pembro-Fluvac/18-19season/Flow cytometry/Bcell/exportNonnavB/d0/spectre/output/NonnavB_baseline_flowSOM.pdf", width=8)
+
+tableOfResults <- propClust.Spect %>% group_by(FlowSOM_metacluster, Cohort) %>% rstatix::get_summary_stats() #  %>% print(n=50)
+unstabClusters <- which(colSums(as.matrix(table(tableOfResults$Cohort, tableOfResults$FlowSOM_metacluster))) != 2)  # where is there complete absence of cluster in cohort
+ifelse(length(unstabClusters) < 1 , 
+       forStats <- propClust.Spect, 
+       forStats <- propClust.Spect[-which(propClust.Spect$FlowSOM_metacluster == unstabClusters), ])
+forStats  %>% group_by(FlowSOM_metacluster) %>% rstatix::wilcox_test(data= ., formula =  freq ~ Cohort) %>% rstatix::adjust_pvalue(method = 'fdr') %>% print(n=50)
 
 
+
+
+
+
+
+##  *********************************************************************************************************************************************************
+##  *********************************************************************************************************************************************************
+##  *********************************************************************************************************************************************************
 
 
 
