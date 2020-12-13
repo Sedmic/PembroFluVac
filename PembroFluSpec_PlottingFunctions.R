@@ -79,13 +79,19 @@ twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
   )
 }
 
-twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="none", position = "left", FCplot=F, confInt=F, ttest=T)
+twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="none", position = "left", FCplot=F, confInt=F, ttest=T, nonparam=F)
 {
   set.seed(102)
-  if (ttest == T && batch == "none")
+  if (ttest == T && batch == "none" && nonparam == F)
   {
     justforttest <- data[, c(xData,yData)]
     fit <- rstatix::t_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
+    pValue <- fit$p
+  }
+  if (ttest == T && batch == "none" && nonparam == T)
+  {
+    justforttest <- data[, c(xData,yData)]
+    fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
     pValue <- fit$p
   }
   if (ttest == F || batch != "none")
@@ -155,13 +161,16 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
 
 
 
-univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
+univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel, position = "left")
 {
   pearson <- round(cor(data[,xData], data[,yData], method = "pearson", use = "complete.obs"), 2)
   pValue <- cor.test(data[,xData], data[,yData], method="pearson")
   if (pValue$p.value < 0.01)   {    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", formatC(pValue$p.value, format="e", digits=1))    }
   if (pValue$p.value >= 0.01) {    annotationInfo <- paste0("Pearson r = ", pearson,"\n","P = ", round(pValue$p.value,2))   }
-  my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))
+  if(position == "left")  { my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))   }
+  if(position == "right")  { my_grob = grobTree(textGrob(annotationInfo, x=0.45,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))   }
+  if(position == "none") { my_grob = grobTree(textGrob(annotationInfo, x=10,  y=10, hjust=0, gp=gpar(col="black", fontsize=1)))   }
+ # my_grob = grobTree(textGrob(annotationInfo, x=0.05,  y=0.9, hjust=0, gp=gpar(col="black", fontsize=28)))
   return (
     ggplot(data ) + 
       geom_smooth(aes_string(x=xData, y=yData, color=fillParam, fill=fillParam), method='lm') + 
@@ -169,7 +178,7 @@ univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel)
       scale_color_manual(values=c("black")) + 
       scale_fill_manual(values=c("grey90")) + 
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
-      theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
+      theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
       annotation_custom(my_grob) + theme(legend.position = "none")     )
 }
 
