@@ -123,10 +123,7 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
   }
 
   if( ! is.factor(data[,xData])) {  data[,xData] <- factor(data[,xData])    }
-  for (i in 1:length(levels(data[,xData])))
-  {
-    data[, paste(levels(data[,xData])[i])] <- mean(data[which(data[,xData] == levels(data[,xData])[i]), yData], na.rm=T)   # now mean calculated for each level of xData
-  }
+  # for (i in 1:length(levels(data[,xData]))) { data[, paste(levels(data[,xData])[i])] <- mean(data[which(data[,xData] == levels(data[,xData])[i]), yData], na.rm=T)}   # now mean calculated for each level of xData
   
   overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T)
   names(overTime)[which(names(overTime) == 'x')] <- yData
@@ -231,7 +228,7 @@ bivScatter <- function(data1, data2, name1, name2, xData, yData, fillParam, titl
 
 prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, yLabel)
 {
-  targets <- which(table(data$Subject) > 1)
+  targets <- which(table(data$Subject) > 0)         # change to >1 if you want to show only the repeated measures values
   subsetData <- data[ which( data$Subject %in% names(targets)   ), ]
   subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
   return(
