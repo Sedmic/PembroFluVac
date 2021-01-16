@@ -94,11 +94,11 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
     fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
     pValue <- fit$p
   }
-  if (ttest == F || batch != "none")
+  if (ttest == F)
   {
-    if (batch == "none")  {  fit <- lm(data = data, as.formula(paste(yData, xData, sep="~") )) }
-    if (batch != "none")  {  fit <- lm(data[,yData] ~ data[,xData] + data[,batch])    }
-    pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)
+    if (batch == "none")  {
+      fit <- wilcox_test(data = data, as.formula(paste(yData, xData, sep="~") ));  pValue <- fit$p  }
+    if (batch != "none")  {  fit <- lm(data[,yData] ~ data[,xData] + data[,batch]); pValue <- summary(fit)$coefficients[2,"Pr(>|t|)"];  CI <- confint(fit)[2,]; CI <- round(CI,2)    }
   }
   if (! is.nan(pValue) && confInt == T)
   {
@@ -362,21 +362,32 @@ volcanoPlot <- function( diffExprData, repelThresh, title, leftLabel, rightLabel
 }
 
 
-plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel)
+plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizebyFDR=F)
 {
   mergeResults$NAME <- toTitleCase(tolower(substr(mergeResults$NAME,start =10, stop=50)))
   mergeResults$NAME <- factor(mergeResults$NAME, levels = mergeResults$NAME[order(mergeResults$NES, decreasing = T)])
   left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
   right_grob <- grobTree(textGrob(rightLabel, x=0.8,y=0.03,hjust=0, gp=gpar(col="black", fontsize=12)))
   mergeResults <- subset(mergeResults, `FDR.q.val` < 0.05)
-  return(
-    ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES), size=6) + 
-    geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
-    geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
-    coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
-    theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) + 
-    annotation_custom(left_grob) + annotation_custom(right_grob)
-  )
+  if(sizebyFDR == F){
+    return(
+      ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES), size=6) + 
+      geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+      geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+      coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
+      theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) + 
+      annotation_custom(left_grob) + annotation_custom(right_grob)
+    )}
+  if(sizebyFDR == T){
+    return(
+      ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES, size=FDR.q.val)) + 
+        geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+        geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+        coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
+        theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18), legend.title = element_text(size=12)) + 
+        scale_size( range=c(8,3),name = "False\nDiscovery\nRate") +  
+        annotation_custom(left_grob) + annotation_custom(right_grob)
+    )}
 }
 
 

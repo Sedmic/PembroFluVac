@@ -294,14 +294,25 @@ DESdata_HiHi_AvH_bL <- DESeq(HiHi_aPD1_v_HC_bL, parallel=TRUE)
 HiHi_AvH_bL <- as.data.frame(results(DESdata_HiHi_AvH_bL, contrast = c("condition", "aPD1_HiHi_cTfh_baseline", "Healthy_HiHi_cTfh_baseline") ))  # pos stats = first elem in comparison
 # write.csv(HiHi_AvH_bL, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/HiHi_AvH_bL.csv")
 volcanoPlot(HiHi_AvH_bL, repelThresh = 0.10, title = "HiHi at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
+HiHi_AvH_bL <- HiHi_AvH_bL[ order(HiHi_AvH_bL$stat, decreasing = F), ]; HiHi_AvH_bL <- HiHi_AvH_bL[ which(!is.na(HiHi_AvH_bL$stat)), ]
 
-probeGenes <- logDataMatrix[ grep(paste(c("TACC3$", "TXNIP","BIN2$","EREG$","GNG4$","^IL1R1$","^FYB$","IL27RA","FOXP3","FGFR1$",
-                                          "CTLA4$","RASA3$","TUBB1$","^BCL2$"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
-
-annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
-ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
-pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
+diffExpGenes <- row.names( rbind(head(HiHi_AvH_bL, 50), tail(HiHi_AvH_bL, 50)))
+probeGenes <- logDataMatrix[diffExpGenes, grep("HiHi_bL",colnames(logDataMatrix),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]; 
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) # 
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, # labels_row = labels, 
+         fontsize_row = 4, color=inferno(100), main = "ICOS+CD38+ cTfh at baseline", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_bL_heatmap_AllLabels.pdf", device="pdf"
+)
+dev.off()
+displayGenes <- c("IL2RB","CTLA4","GNG4","TUBB1","TNFRSF1B"); labels <- rownames(probeGenes); labels[!labels %in% displayGenes] <- ""   # for showing just select rownames
+annotation$Subset <- NULL
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) # Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), 
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, labels_row = labels, 
+         fontsize_row = 16, color=inferno(100), main = "ICOS+CD38+ cTfh at baseline", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_bL_heatmap_SelectLabels.pdf", device="pdf"
+)
+dev.off()
 
 
 
@@ -314,20 +325,30 @@ HiHi_aPD1_v_HC_oW <- HiHi_aPD1_v_HC_oW[idx,]   # keep hard filter from above for
 DESdata_HiHi_AvH_oW <- DESeq(HiHi_aPD1_v_HC_oW, parallel=TRUE)
 
 HiHi_AvH_oW <- as.data.frame(results(DESdata_HiHi_AvH_oW, contrast = c("condition", "aPD1_HiHi_cTfh_oneWeek", "Healthy_HiHi_cTfh_oneWeek") ))  # pos stats = first elem in comparison
-# write.csv(HiHi_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/HiHi_AvH_oW.csv")
 volcanoPlot(HiHi_AvH_oW, repelThresh = 0.15, title = "HiHi at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/HiHi_H-v-aPD1_d7_volcano.pdf", device="pdf")
+HiHi_AvH_oW <- HiHi_AvH_oW[ order(HiHi_AvH_oW$stat, decreasing = F), ];  HiHi_AvH_oW <- HiHi_AvH_oW[ which(!is.na(HiHi_AvH_oW$stat)), ]
+# write.csv(HiHi_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/HiHi_AvH_oW.csv")
 
-probeGenes <- logDataMatrix[ grep(paste(c("MKI67$", "HELLS","GGCT","PMM1","PCSK7","^GK$","^OASL$","TNFRSF1B","OASL","UGDH$",
-                                          "TMEM71","RALBP1","ORAI2","CKAP2L", "PRDM1$"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
-
-annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
-ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
-pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression", border_color = NA
-#        , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_diffExp_heatmap.pdf", device="pdf"
-         )
+diffExpGenes <- row.names( rbind(head(HiHi_AvH_oW, 50), tail(HiHi_AvH_oW, 50)))
+probeGenes <- logDataMatrix[diffExpGenes, grep("HiHi_oW",colnames(logDataMatrix),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]; 
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) # 
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, # labels_row = labels, 
+         fontsize_row = 4, color=inferno(100), main = "ICOS+CD38+ cTfh at one week", border_color = NA, 
+#        , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_oW_heatmap_AllLabels.pdf", device="pdf"
+)
 dev.off()
+
+displayGenes <- c("MKI67","HELLS","ESPL1","ARID1A","TNFRSF1B","HOPX"); labels <- rownames(probeGenes); labels[!labels %in% displayGenes] <- "" 
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) 
+annotation$Subset <- NULL
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, labels_row = labels, 
+         fontsize_row = 16, color=inferno(100), main = "ICOS+CD38+ cTfh at one week", border_color = NA, 
+#        , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_oW_heatmap_SelectLabels.pdf", device="pdf"
+)
+dev.off()
+
 
 metaX <- makeMetaData(colnames(probeGenes)); 
 probeGenes <- logDataMatrix[ grep(paste(c("BCL6$","IL21","IL10", "PRDM1$","TOX2"), collapse="|"), rownames(logDataMatrix), value=F), grep("HiHi",colnames(logDataMatrix),value=F)]
@@ -353,16 +374,28 @@ PB_aPD1_v_HC_bL <- PB_aPD1_v_HC_bL[idx,]   # keep hard filter from above for con
 DESdata_PB_AvH_bL <- DESeq(PB_aPD1_v_HC_bL, parallel=TRUE)
 
 PB_AvH_bL <- as.data.frame(results(DESdata_PB_AvH_bL, contrast = c("condition", "aPD1_PB_baseline", "Healthy_PB_baseline") ))  # pos stats = first elem in comparison
-# write.csv(PB_AvH_bL, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/PB_AvH_bL.csv")
+
 volcanoPlot(PB_AvH_bL, repelThresh = 0.15, title = "PB at baseline in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
-
-probeGenes <- logDataMatrix[ grep(paste(c("ZNF44$", "^SDPR$","CH25H$","CXCR1$","IFIT2$","PEG13$","^FOS$","UNC119$","DOCK9$","^SNN$",
-                                          "S1PR5","IGHV2.70.1"), collapse="|"), rownames(logDataMatrix), value=F), grep("PB",colnames(logDataMatrix),value=F)]
-
+PB_AvH_bL <- PB_AvH_bL[ order(PB_AvH_bL$stat, decreasing = F), ]; PB_AvH_bL <- PB_AvH_bL[ which(!is.na(PB_AvH_bL$stat)), ]
+# write.csv(PB_AvH_bL, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/PB_AvH_bL.csv")
+diffExpGenes <- row.names( rbind(head(PB_AvH_bL, 50), tail(PB_AvH_bL, 50)))
+probeGenes <- logDataMatrix[diffExpGenes, grep("PB_bL",colnames(logDataMatrix),value=F)]
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
-ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
-pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, # labels_row = labels, 
+         fontsize_row = 4, color=inferno(100), main = "Plasmablasts at baseline", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HvA_bL_heatmap_AllLabels.pdf", device="pdf"
+)
+dev.off()
+
+displayGenes <- c("MKI67","HELLS","ESPL1","ARID1A","TNFRSF1B", "JAK1"); labels <- rownames(probeGenes); labels[!labels %in% displayGenes] <- "" 
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]; annotation$Subset <- NULL
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), 
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, labels_row = labels, 
+         fontsize_row = 16, color=inferno(100), main = "Plasmablasts at baseline", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HvA_bL_heatmap_SelectLabels.pdf", device="pdf"
+)
+dev.off()
 
 # ----------- PB in aPD1 vs HC   oneWeek 
 
@@ -373,17 +406,29 @@ PB_aPD1_v_HC_oW <- PB_aPD1_v_HC_oW[idx,]   # keep hard filter from above for con
 DESdata_PB_AvH_oW <- DESeq(PB_aPD1_v_HC_oW, parallel=TRUE)
 
 PB_AvH_oW <- as.data.frame(results(DESdata_PB_AvH_oW, contrast = c("condition", "aPD1_PB_oneWeek", "Healthy_PB_oneWeek") ))  # pos stats = first elem in comparison
-# write.csv(PB_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/PB_AvH_oW.csv")
 volcanoPlot(PB_AvH_oW, repelThresh = 0.15, title = "PB at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
+PB_AvH_oW <- PB_AvH_oW[ order(PB_AvH_oW$stat, decreasing = F), ]; PB_AvH_oW <- PB_AvH_oW[ which(!is.na(PB_AvH_oW$stat)), ]
+# write.csv(PB_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/PB_AvH_oW.csv")
 
-probeGenes <- logDataMatrix[ grep(paste(c("CD6$", "SLBP$","GNAI2$","STK17A","PNRC1$","DYRK2$","^DUSP1$","KLF3$","B3GNT2$","HEBP2$",
-                                          "PNRC1","SNX20","IGLV9.49", "KIF2C","AURKB"), collapse="|"), rownames(logDataMatrix), value=F), grep("PB",colnames(logDataMatrix),value=F)]
-
+diffExpGenes <- row.names( rbind(head(PB_AvH_oW, 50), tail(PB_AvH_oW, 50)))
+probeGenes <- logDataMatrix[diffExpGenes, grep("PB_oW",colnames(logDataMatrix),value=F)]
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
-ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
-pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, # labels_row = labels, 
+         fontsize_row = 4, color=inferno(100), main = "Plasmablasts at one week", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HvA_oW_heatmap_AllLabels.pdf", device="pdf"
+)
+dev.off()
 
+
+displayGenes <- c("BUB1","ESPL1","TNIP2","TRAIP","AURKB"); labels <- rownames(probeGenes); labels[!labels %in% displayGenes] <- "" 
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]; annotation$Subset <- NULL
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), 
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, labels_row = labels, 
+         fontsize_row = 16, color=inferno(100), main = "Plasmablasts at one week", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HvA_oW_heatmap_SelectLabels.pdf", device="pdf"
+)
+dev.off()
 
 
 # ----------- ABC in aPD1 vs HC   oneWeek 
@@ -395,16 +440,65 @@ ABC_aPD1_v_HC_oW <- ABC_aPD1_v_HC_oW[idx,]   # keep hard filter from above for c
 DESdata_ABC_AvH_oW <- DESeq(ABC_aPD1_v_HC_oW, parallel=TRUE)
 
 ABC_AvH_oW <- as.data.frame(results(DESdata_ABC_AvH_oW, contrast = c("condition", "aPD1_ABC_oneWeek", "Healthy_ABC_oneWeek") ))  # pos stats = first elem in comparison
-# write.csv(ABC_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/ABC_AvH_oW.csv")
 volcanoPlot(ABC_AvH_oW, repelThresh = 0.05, title = "ABC at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
 
-probeGenes <- logDataMatrix[ grep(paste(c("RPP40$", "ZSCAN22$","NTHL1$","RARRES3","MRPL10$","MGEA5$","^CCNL2$","NKTR$","COG6$","DDX39A$",
-                                          "GOLGB1","SREK1","IGKV2.29"), collapse="|"), rownames(logDataMatrix), value=F), grep("ABC",colnames(logDataMatrix),value=F)]
+ABC_AvH_oW <- ABC_AvH_oW[ order(ABC_AvH_oW$stat, decreasing = F), ]; ABC_AvH_oW <- ABC_AvH_oW[ which(!is.na(ABC_AvH_oW$stat)), ]
+# write.csv(ABC_AvH_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/ABC_AvH_oW.csv")
 
+diffExpGenes <- row.names( rbind(head(ABC_AvH_oW, 50), tail(ABC_AvH_oW, 50)))
+probeGenes <- logDataMatrix[diffExpGenes, grep("ABC_oW",colnames(logDataMatrix),value=F)]
 annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
-ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  )
-pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors,
-         fontsize_row = 12, color=inferno(100), main = "Log counts gene expression")
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  
+
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, # labels_row = labels, 
+         fontsize_row = 4, color=inferno(100), main = "ABC at one week", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HvA_oW_heatmap_AllLabels.pdf", device="pdf"
+)
+dev.off()
+
+displayGenes <- c("HELLS","ESPL1","TNIP2","TRAIP","AURKB"); labels <- rownames(probeGenes); labels[!labels %in% displayGenes] <- "" 
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]; annotation$Subset <- NULL
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), 
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, labels_row = labels, 
+         fontsize_row = 16, color=inferno(100), main = "ABC at one week", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HvA_oW_heatmap_SelectLabels.pdf", device="pdf"
+)
+dev.off()
+
+
+# ----------- ABC in aPD1 vs HC   baseline 
+
+ABC_aPD1_v_HC_bLmeta <- metaData[ grep("ABC_bL", rownames(metaData)),1:2]
+ABC_aPD1_v_HC_bLmeta$condition <- factor(ABC_aPD1_v_HC_bLmeta$condition);  ABC_aPD1_v_HC_bLdata <- dataMatrix[ , grep("ABC_bL", colnames(dataMatrix) ) ]
+ABC_aPD1_v_HC_bL <- DESeqDataSetFromMatrix(countData=ABC_aPD1_v_HC_bLdata, colData=ABC_aPD1_v_HC_bLmeta, design = ~condition)
+ABC_aPD1_v_HC_bL <- ABC_aPD1_v_HC_bL[idx,]   # keep hard filter from above for consistency
+DESdata_ABC_AvH_bL <- DESeq(ABC_aPD1_v_HC_bL, parallel=TRUE)
+
+ABC_AvH_bL <- as.data.frame(results(DESdata_ABC_AvH_bL, contrast = c("condition", "aPD1_ABC_baseline", "Healthy_ABC_baseline") ))  # pos stats = first elem in comparison
+# write.csv(ABC_AvH_bL, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/ABC_AvH_bL.csv")
+volcanoPlot(ABC_AvH_bL, repelThresh = 0.05, title = "ABC at baseline in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
+
+ABC_AvH_bL <- ABC_AvH_bL[ order(ABC_AvH_bL$stat, decreasing = F), ]; ABC_AvH_bL <- ABC_AvH_bL[ which(!is.na(ABC_AvH_bL$stat)), ]
+
+diffExpGenes <- row.names( rbind(head(ABC_AvH_bL, 50), tail(ABC_AvH_bL, 50)))
+probeGenes <- logDataMatrix[diffExpGenes, grep("ABC_bL",colnames(logDataMatrix),value=F)]
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, # labels_row = labels, 
+         fontsize_row = 4, color=inferno(100), main = "ABC at one week", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HvA_bL_heatmap_AllLabels.pdf", device="pdf"
+)
+dev.off()
+
+
+displayGenes <- c("HELLS","ESPL1","TNIP2","TRAIP","AURKB"); labels <- rownames(probeGenes); labels[!labels %in% displayGenes] <- "" 
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]; annotation$Subset <- NULL
+ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"),TimeCategory = c("baseline"="grey90","oneWeek"="grey40")  ) #  Subset = c("HiHi_cTfh"="#aaccbb", "ABC"="blue", "PB"="yellow", "navB"="orange"), 
+pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, labels_row = labels, 
+         fontsize_row = 16, color=inferno(100), main = "ABC at one week", border_color = NA
+#         , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HvA_bL_heatmap_SelectLabels.pdf", device="pdf"
+)
+dev.off()
 
 
 # ----------- NaiveB in aPD1 vs HC   oneWeek 
@@ -440,11 +534,81 @@ navB_AvH_bL <- as.data.frame(results(DESdata_navB_AvH_bL, contrast = c("conditio
 volcanoPlot(navB_AvH_bL, repelThresh = 0.05, title = "naiveB at oneWeek in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "aPD1" )
 
 
-# ----------- ----------- 
 
-#                                 PATHWAY analysis 
+#' ----------- ----------- 
 
-# ----------- ----------- 
+#'                                 Gene Ontology 
+
+#' ----------- ----------- 
+
+##' cTfh responses
+GO.aPD1 <- read.csv(file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GeneOntology/HiHi_AvH_oW_enrichApd1/HiHi_AvH_oW_enrichApd1_GeneOntologies.csv")
+GO.Healthy <- read.csv(file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GeneOntology/HiHi_AvH_oW_enrichHealthy/HiHi_AvH_oW_enrichHealthy_GeneOntologies.csv")
+GO.aPD1$Symbols <- GO.Healthy$Symbols <- GO.aPD1$Genes <- GO.Healthy$Genes <- NULL
+GO.aPD1$GroupID <- "aPD1"; GO.Healthy$GroupID <- "Healthy"
+GO.aPD1$LogP <- -GO.aPD1$LogP
+# GO.aPD1[nrow(GO.aPD1)+1,] <- NA             # create an empty row as a visual aid
+mergedOntology <- rbind(GO.aPD1[ c(1:4,16),], GO.Healthy[ c(2,3,10,13), ] ) 
+
+mergeResults <- mergedOntology;  title = "ICOS+CD38+ cTfh \nat one week"; leftLabel = "Healthy"; rightLabel = "aPD1" 
+
+mergeResults$Description <- factor(mergeResults$Description, levels = mergeResults$Description[order(mergeResults$LogP, decreasing = F)])
+left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=16)))
+right_grob <- grobTree(textGrob(rightLabel, x=0.8,y=0.03,hjust=0, gp=gpar(col="black", fontsize=16)))
+ggplot(data=mergeResults) + geom_point(aes(x=Description, y=LogP), size=6) + 
+  geom_bar( data = subset(mergeResults, `GroupID` == "aPD1"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+  geom_bar( data = subset(mergeResults, `GroupID` == "Healthy"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+  coord_flip() + theme_bw() + ggtitle(title) + ylab("-Log (P)") + xlab(NULL) + 
+  theme(axis.title.x = element_text(size=18), axis.text = element_text(size=18), title = element_text(size=18)) + 
+  annotation_custom(left_grob) + annotation_custom(right_grob) + scale_y_continuous(labels = abs)
+ggplot(data=mergeResults) + geom_point(aes(x=Description, y=LogP), size=6) + 
+  geom_bar( data = subset(mergeResults, `GroupID` == "aPD1"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+  geom_bar( data = subset(mergeResults, `GroupID` == "Healthy"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+  coord_flip() + theme_bw() + ggtitle(title) + ylab("-Log (P)") + xlab(NULL) + 
+  theme(axis.title.x = element_text(size=18), axis.text = element_text(size=18), title = element_text(size=18)) + 
+  #annotation_custom(left_grob) + annotation_custom(right_grob) + 
+  scale_y_continuous(labels = abs)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GeneOntology_cTfh_AvH_oW.pdf", width=8, height=7)
+
+##'  Plasmablasts
+GO.aPD1 <- read.csv(file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GeneOntology/PB_AvH_oW_enrichApd1/PB_AvH_oW_enrichApd1_GeneOntologies.csv")
+GO.Healthy <- read.csv(file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GeneOntology/PB_AvH_oW_enrichHealthy/PB_AvH_oW_enrichHealthy_GeneOntologies.csv")
+GO.aPD1$Symbols <- GO.Healthy$Symbols <- GO.aPD1$Genes <- GO.Healthy$Genes <- NULL
+GO.aPD1$GroupID <- "aPD1"; GO.Healthy$GroupID <- "Healthy"
+GO.aPD1$LogP <- -GO.aPD1$LogP
+# GO.aPD1[nrow(GO.aPD1)+1,] <- NA             # create an empty row as a visual aid
+mergedOntology <- rbind(GO.aPD1[ c(1:3),], GO.Healthy[ c(1:3), ] ) 
+mergedOntology$Description[4] <- substr(mergedOntology$Description[4],1,38)
+mergedOntology$Description[4] <- substr(mergedOntology$Description[4],1,38)
+
+mergeResults <- mergedOntology;  title = "ASC at one week"; leftLabel = "Healthy"; rightLabel = "aPD1" 
+
+mergeResults$Description <- factor(mergeResults$Description, levels = mergeResults$Description[order(mergeResults$LogP, decreasing = F)])
+left_grob <- grobTree(textGrob(leftLabel, x=0.05,y=0.03,hjust=0, gp=gpar(col="black", fontsize=16)))
+right_grob <- grobTree(textGrob(rightLabel, x=0.8,y=0.03,hjust=0, gp=gpar(col="black", fontsize=16)))
+ggplot(data=mergeResults) + geom_point(aes(x=Description, y=LogP), size=6) + 
+  geom_bar( data = subset(mergeResults, `GroupID` == "aPD1"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+  geom_bar( data = subset(mergeResults, `GroupID` == "Healthy"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+  coord_flip() + theme_bw() + ggtitle(title) + ylab("-Log (P)") + xlab(NULL) + 
+  theme(axis.title.x = element_text(size=18), axis.text = element_text(size=18), title = element_text(size=18)) + 
+  annotation_custom(left_grob) + annotation_custom(right_grob) + scale_y_continuous(labels = abs, limits = c(-7,12))
+ggplot(data=mergeResults) + geom_point(aes(x=Description, y=LogP), size=6) + 
+  geom_bar( data = subset(mergeResults, `GroupID` == "aPD1"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
+  geom_bar( data = subset(mergeResults, `GroupID` == "Healthy"), aes(x=Description, y=LogP) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+  coord_flip() + theme_bw() + ggtitle(title) + ylab("-Log (P)") + xlab(NULL) + 
+  theme(axis.title.x = element_text(size=18), axis.text = element_text(size=18), title = element_text(size=18)) + 
+  # annotation_custom(left_grob) + annotation_custom(right_grob) + 
+  scale_y_continuous(labels = abs, limits = c(-12,12))
+
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GeneOntology_PB_AvH_oW.pdf", width=8, height=7)
+
+
+
+#' ----------- ----------- 
+
+#'                                 PATHWAY analysis 
+
+#' ----------- ----------- 
 
 
 workingDir <- getwd()
@@ -455,12 +619,14 @@ pathwayPos <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115
 pathwayNeg <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/gsea_report_for_na_neg_1573243350115.xls", sep="\t")
 mergeResults <- rbind(pathwayPos, pathwayNeg)
 plotGSEAlollipop( mergeResults, title = "Hallmark pathways", leftLabel = "Healthy", rightLabel = "aPD1")
-plotGSEAlollipop( mergeResults, title = "Hallmark pathways", leftLabel = " ", rightLabel = " ")
+plotGSEAlollipop( mergeResults, title = "Hallmark pathways", leftLabel = " ", rightLabel = " ", sizebyFDR = T)
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPathways_oW.pdf", device="pdf", width=7, height=9)
 
 # IL-2 stat5 pathway 
 singlePathway <- read.csv("Results/HiHi_AvH_oW_hallmark.GseaPreranked.1573243350115/HALLMARK_IL2_STAT5_SIGNALING.xls", sep="\t")
 plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "IL2", title = "Hallmark: IL2-STAT5 pathway", leftLabel = "aPD1", rightLabel = "Healthy", 
+                    cohortCompare =T, legendUpperRight = F)
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "IL2", title = "Hallmark: IL2-STAT5 pathway", leftLabel = " ", rightLabel = " ", 
                     cohortCompare =T, legendUpperRight = F)
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HallmarkPahtways_IL2STAT5_oW.pdf", device="pdf", width = 7, height=6)  
 
@@ -491,8 +657,9 @@ plotGSEAlollipop( mergeResults, title = "Hallmark genesets: HiHi AvH at baseline
 pathwayPos <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/gsea_report_for_na_pos_1574366663536.xls", sep="\t")
 pathwayNeg <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/gsea_report_for_na_neg_1574366663536.xls", sep="\t")
 mergeResults <- rbind(pathwayPos, pathwayNeg)
-plotGSEAlollipop( mergeResults, title = "Plasmablasts at one week", leftLabel = "Healthy", rightLabel = "aPD1")
-# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HallmarkPathways_AvH_oW.pdf", device="pdf", width=6, height=7)
+plotGSEAlollipop( mergeResults, title = "ASC at one week", leftLabel = "Healthy", rightLabel = "aPD1")
+plotGSEAlollipop( mergeResults, title = "ASC at one week", leftLabel = " ", rightLabel = " ", sizebyFDR=T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HallmarkPathways_AvH_oW.pdf", device="pdf", width=6, height=4)
 
 # G2m pathway 
 singlePathway <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/HALLMARK_G2M_CHECKPOINT.xls", sep="\t")
@@ -502,7 +669,7 @@ plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "G2M", title = "H
 # Mitotic Spindle
 singlePathway <- read.csv("Results/PB_AvH_oW_hallmark.GseaPreranked.1574366663536/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
 plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "MITOT", title = "Hallmark: Mitotic Spindle", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
-# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HallmarkPahtways_MitSpindle_oW.pdf", device="pdf", width=7, height=6)  
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/PB_HallmarkPathways_MitSpindle_oW.pdf", device="pdf", width=7, height=6)  
 
 
 # ************ ABC for AvH at oneWeek  ********************
@@ -521,6 +688,30 @@ plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "G2M", title = "H
 singlePathway <- read.csv("Results/ABC_AvH_oW_hallmark.GseaPreranked.1574696455529/HALLMARK_MITOTIC_SPINDLE.xls", sep="\t")
 plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "MITOT", title = "Hallmark: Mitotic Spindle", leftLabel = "aPD1", rightLabel = "Healthy", cohortCompare =T, legendUpperRight = T)
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABC_HallmarkPahtways_MitSpindle_oW.pdf", device="pdf", width=7, height=6)  
+
+
+
+# ************ Ellebedy subsets validation  - ASC-vs-naive ********************
+pathwayPos <- read.csv("Results/PBvNav_AH_bL_externalGenesets.GseaPreranked.1610193172180/gsea_report_for_na_pos_1610193172180.tsv", sep="\t")
+pathwayNeg <- read.csv("Results/PBvNav_AH_bL_externalGenesets.GseaPreranked.1610193172180/gsea_report_for_na_neg_1610193172180.tsv", sep="\t")
+mergeResults <- rbind(pathwayPos, pathwayNeg)
+singlePathway <- read.csv("Results/PBvNav_AH_bL_externalGenesets.GseaPreranked.1610193172180/GSE68245_ASC-VS-NAVB.tsv", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "ASC-VS-NAVB", title = "GSE68245: ASC", leftLabel = "ASC", rightLabel = "Naive B", cohortCompare =F, 
+                    legendUpperRight = T)
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "ASC-VS-NAVB", title = "GSE68245: ASC", leftLabel = " ", rightLabel = " ", cohortCompare =F, 
+                    legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ASCvNav_AH_EllebedyReference_bL.pdf", device="pdf", width=7, height=6)  
+
+# ABC-vs-naive
+pathwayPos <- read.csv("Results/ABCvNav_AH_bL_externalGenesets.GseaPreranked.1610193286316/gsea_report_for_na_pos_1610193286316.tsv", sep="\t")
+pathwayNeg <- read.csv("Results/ABCvNav_AH_bL_externalGenesets.GseaPreranked.1610193286316/gsea_report_for_na_neg_1610193286316.tsv", sep="\t")
+mergeResults <- rbind(pathwayPos, pathwayNeg)
+singlePathway <- read.csv("Results/ABCvNav_AH_bL_externalGenesets.GseaPreranked.1610193286316/GSE68245_ABC-VS-NAVB.tsv", sep="\t")
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "ABC-VS-NAVB", title = "GSE68245: ABC", leftLabel = "ABC", rightLabel = "Naive B", cohortCompare =F, 
+                    legendUpperRight = T)
+plotGSEAtraditional(mergeResults, singlePathway, pathwayName = "ABC-VS-NAVB", title = "GSE68245: ABC", leftLabel = " ", rightLabel = " ", cohortCompare =F, 
+                    legendUpperRight = T)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/ABCvNav_AH_EllebedyReference_bL.pdf", device="pdf", width=7, height=6)  
 
 
 

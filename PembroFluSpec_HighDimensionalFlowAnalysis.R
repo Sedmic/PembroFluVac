@@ -19,7 +19,7 @@ Spectre::package.check()
 Spectre::package.load()
 library(dplyr)
 library(rstatix)
-
+sessionInfo()
 
 # function to choose markers to use in your analysis (do not need to change anything here)
 choose.markers <- function(exp_data) {
