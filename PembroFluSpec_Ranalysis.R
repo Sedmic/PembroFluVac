@@ -67,7 +67,10 @@ if (length (a) > 0) { colnames(Tmfi) [ grep( paste(a, collapse="|"), colnames(Tm
 
 temp3 <- merge(x = temp2, y=Tmfi, all = T, suffixes = c(".one",".Tmedfi"), by= c('Label', 'TimeCategory','Cohort','Subject','TimePoint','Year'))
 
-demog <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/clinicalMetadata.csv", stringsAsFactors = F, header=T); demog$TimePoint <- demog$Visit <- NULL
+demog <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/clinicalMetadata.csv", stringsAsFactors = F, header=T); 
+demog$TimePoint <- demog$Visit <- NULL
+demog$DateFirstIRAE <- strptime(demog$DateFirstIRAE, format = "%Y%m%d")
+demog$DateFirstFlowFile <- strptime(demog$DateFirstFlowFile, format = "%Y%m%d")
 temp4 <- merge(x = temp3, y=demog, all=T, suffixes = c(".two",".demog"), by = c('Subject', 'TimeCategory', 'Year','Cohort'))
 
 
@@ -1327,6 +1330,21 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
 #' ## ----------- irAE analysis  --------------------
 #'
 #'
+
+index <- demog[which(demog$irAE == "Y" | demog$irAE == "N"),"Subject"]
+mergedData.irAE <- mergedData[which(mergedData$Subject %in% index),]  
+subsetData <- subset(mergedData.irAE, TimeCategory == "baseline" & Cohort == "aPD1")
+subsetData$dateDiff <- round( as.numeric(difftime(subsetData$DateFirstIRAE,  subsetData$DateFirstFlowFile, units = "days")),digits = 0)
+subsetData <- subsetData[-which(is.na(subsetData$dateDiff)), ]           # zero out the ones who did not have irAE
+subsetData$Subject <- factor(subsetData$Subject, levels = subsetData$Subject[order(subsetData$dateDiff, decreasing = T)] )
+ggplot(subsetData, aes(x=dateDiff, y=Subject)) + 
+  geom_bar(stat="Identity", width=0.15, fill="#ff9a6a", size=0.01, color="black") + geom_point(aes(size=irAEgradeWorst)) + 
+  xlab("Days until flu vaccine") + ylab("Subject") + labs(size = "irAE grade") + ggtitle("Time since first irAE") + scale_size(range=c(2,7),) + 
+  theme_bw() + theme(axis.text.x = element_text(color = "black", size=24), axis.title = element_text(size=24), plot.title = element_text(size=32),
+                     axis.text.y = element_blank(), legend.text = element_text(size=16), legend.title = element_text(size=16), 
+                     ) 
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_dateDiff_irAEtoVaccine.pdf")
+
 
 subsetData <- mergedData[which(!is.na(mergedData$irAE) & mergedData$irAE != "" ), ]
 twoSampleBar(data = subsetData, yData="FCtfh_oW", yLabel = "Fold-change at one week", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE") + 

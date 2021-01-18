@@ -379,19 +379,7 @@ ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() +
 
 subsetData <- subset(mergedDataRock, TimeCategory == 'baseline')
 shapiro_test(data = subsetData, vars = c("IgG1_Total.sialylated"))          # not normal distribution so will use nonparametric
-twoSampleBarRock(data=subsetData, xData="Cohort", yData="IgG1_Total.sialylated", fillParam="Cohort", title="Sialylation\nbaseline", yLabel="% anti-H1 IgG1")
-
-data=subsetData; xData="Cohort"; yData="IgG1_Total.sialylated"; fillParam="Cohort"; title="Sialylation\nbaseline"; yLabel="% anti-H1 IgG1"; position="left"
-overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T); names(overTime)[which(names(overTime) == 'x')] <- yData
-justforttest <- data[, c(xData,yData)]; fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
-pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 2))
-my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
-ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
-  geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
-  ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
-  theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
-        plot.title = element_text(size=28,hjust = 0.5),axis.text.x=element_text(angle=45,vjust=1,hjust=1)) + annotation_custom(my_grob)  + 
+twoSampleBarRock(data=subsetData, xData="Cohort", yData="IgG1_Total.sialylated", fillParam="Cohort", title="Sialylation\nbaseline", yLabel="% anti-H1 IgG1") + 
   scale_y_continuous(breaks = seq(0,100,2),limits=c(0,22))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/Sialylation_baseline_ROCK.pdf", width = 4)
 wilcox_test(IgG1_Total.sialylated ~ Cohort, data=subsetData)
@@ -419,19 +407,7 @@ ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() +
 
 
 subsetData <- subset(mergedDataRock, TimeCategory == 'baseline')
-data=subsetData; xData="Cohort"; yData="Lo.Hi.HA.affinity"; fillParam="Cohort"; title="Affinity"; yLabel="Lo Hi Affinity - H1N1pdm09"; position="left"
-twoSampleBarRock(data=subsetData, xData="Cohort", yData="Lo.Hi.HA.affinity", fillParam="Cohort", title="Affinity", yLabel="Lo Hi Affinity - H1N1pdm09")
-
-overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T); names(overTime)[which(names(overTime) == 'x')] <- yData
-justforttest <- data[, c(xData,yData)]; fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
-pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
-my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
-ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
-  geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
-  ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
-  theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
-        plot.title = element_text(size=28,hjust = 0.5),axis.text.x=element_text(angle=45,vjust=1,hjust=1)) + annotation_custom(my_grob)  + 
+twoSampleBarRock(data=subsetData, xData="Cohort", yData="Lo.Hi.HA.affinity", fillParam="Cohort", title="Affinity", yLabel="Lo Hi Affinity - H1N1pdm09") + 
   scale_y_continuous(breaks = seq(0,100,0.2),limits=c(0,1))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/LoHiAffinity_baseline_ROCK.pdf", width = 4)
 wilcox_test(FCCXCL13_oW ~ Cohort, data=subsetData)
@@ -465,9 +441,10 @@ wilcox_test(FCaffinity_late ~ Cohort, data=FC_response)
 #'
 
 subsetData <- mergedDataRock.nolate[which(!is.na(mergedDataRock.nolate$irAE) & mergedDataRock.nolate$irAE != "" ), ]
-twoSampleBar(data = subset(subsetData, TimeCategory=="oneWeek"), yData="FCtfh_oW", yLabel = "Fold-change at one week", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE") + 
+twoSampleBarRock(data = subset(subsetData, TimeCategory=="oneWeek" & Cohort=="aPD1"), yData="FCtfh_oW", yLabel = "Fold-change at one week", title="ICOS+CD38+ cTfh", 
+                 xData = "irAE",fillParam = "irAE",position = 'right') + 
   scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_FCtfh.pdf", width=4)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_FCtfh_ROCK.pdf", width=5)
 
 
 
