@@ -441,12 +441,24 @@ wilcox_test(FCaffinity_late ~ Cohort, data=FC_response)
 #'
 
 subsetData <- mergedDataRock.nolate[which(!is.na(mergedDataRock.nolate$irAE) & mergedDataRock.nolate$irAE != "" ), ]
-twoSampleBarRock(data = subset(subsetData, TimeCategory=="oneWeek" & Cohort=="aPD1"), yData="FCtfh_oW", yLabel = "Fold-change at one week", title="ICOS+CD38+ cTfh", 
+subsetData <- subset(subsetData, TimeCategory=="oneWeek" & Cohort=="aPD1")
+twoSampleBarRock(data = subsetData, yData="FCtfh_oW", yLabel = "Fold-change at one week", title="ICOS+CD38+ cTfh", 
                  xData = "irAE",fillParam = "irAE",position = 'right') + 
   scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_FCtfh_ROCK.pdf", width=5)
 
+twoSampleBarRock(data = subsetData, yData="ICOS.CD38..cTfh.medFI.aIgG4", yLabel = "medianFI aIgG4 - baseline", title="ICOS+CD38+ cTfh", 
+                 xData = "irAE",fillParam = "irAE",position = 'left') + 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28),axis.text.x = element_text(angle=0, hjust=0.5,vjust=0,face="plain")) + 
+  coord_cartesian(ylim = c(0,800))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_baselineTfh_aIgG4_ROCK.pdf", width=5)
 
+
+twoSampleBarRock(data = subsetData, yData="ICOS.CD38..cTfh.medFI.ICOS", yLabel = "medianFI ICOS - baseline", title="ICOS+CD38+ cTfh", 
+                 xData = "irAE",fillParam = "irAE",position = 'left') + 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28),axis.text.x = element_text(angle=0, hjust=0.5,vjust=0,face="plain")) + 
+  coord_cartesian(ylim = c(0,20000))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_baselineTfh_ICOS_ROCK.pdf", width=5)
 
 
 

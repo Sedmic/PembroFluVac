@@ -390,20 +390,19 @@ plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizeby
   mergeResults <- subset(mergeResults, `FDR.q.val` < 0.05)
   if(sizebyFDR == F){
     return(
-      ggplot(data=mergeResults) + 
+      ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES), size=6) + 
       geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorRight, size=0.01, color="black") +
       geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorLeft, size=0.01, color="black") +
-      geom_point(aes(x=NAME, y=NES), size=6) + 
       coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
       theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
       annotation_custom(left_grob) + annotation_custom(right_grob) 
     )}
   if(sizebyFDR == T){
     return(
-      ggplot(data=mergeResults) + 
+      ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES, size=FDR.q.val)) + 
         geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorRight, size=0.01, color="black") +
         geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorLeft, size=0.01, color="black") +        
-        geom_point(aes(x=NAME, y=NES, size=FDR.q.val)) + 
+        
         coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
         theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18), legend.title = element_text(size=12)) + 
         scale_size( range=c(8,3),name = "False\nDiscovery\nRate") +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
