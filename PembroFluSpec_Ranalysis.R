@@ -846,7 +846,7 @@ fisher.test(continTable)
 seroprot <- data.frame( Cohort = c("Healthy", "aPD1"), Seroprot = c(HC_seroprot / HC_total, aPD1_seroprot / aPD1_total))
 seroprot$Cohort <- factor(seroprot$Cohort, levels = c("Healthy", "aPD1"))
 ggplot(data=seroprot, aes(x=Cohort, y=Seroprot, fill=Cohort,width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
-  geom_bar( position = position_dodge(), stat = "identity") + ggtitle("Seroprotection") + ylab("Proportion seroprotected") +  theme_bw() +
+  geom_bar( position = position_dodge(), stat = "identity", color="black",size=0.1) + ggtitle("Seroprotection") + ylab("Proportion seroprotected") +  theme_bw() +
   theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
   theme(legend.position = "none", axis.text = element_text(color="black")) + coord_cartesian(ylim = c(0,1)) + scale_y_continuous(breaks = seq(0,1,0.1))
 # ggsave (filename = "D:/Pembro-Fluvac/Analysis/Images/Seroprotection_byCohort.pdf", device="pdf", width=4)
@@ -1039,12 +1039,12 @@ melted %>%  anova_test(value ~ TimeCategory+Cohort )                        # tw
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG1_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG1 total galactosylation", 
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG1", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) ) + 
-  coord_cartesian(ylim = c(50,100))
+  coord_cartesian(ylim = c(90,100))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_Tot-galactosylation_overTime_perSubject.pdf", width=8)
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG2_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG2 total galactosylation", 
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG2", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) )+ 
-  coord_cartesian(ylim = c(50,100))
+  coord_cartesian(ylim = c(80,100))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG2_Tot-galactosylation_overTime_perSubject.pdf", width=8)
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG3/4 total galactosylation", 
@@ -1327,31 +1327,29 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
 #' ## ----------- irAE analysis  --------------------
 #'
 #'
-irAEplots <- function(data, xData = "irAE", yData, yLabel = "__", title = "__")
-{
-  overTime <- aggregate(x = data[,yData], by= list(irAE = data$irAE), FUN=mean, na.rm = T)
-  names(overTime)[which(names(overTime) == 'x')] <- yData
-  return(
-    ggplot(data=subsetData, aes_string(x=xData, y=yData, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) + 
-      # geom_bar(data=overTime, aes(x=irAE, y=yData), position = position_dodge(), stat = "identity") + 
-      geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
-      ggtitle(title) + xlab("irAE") + ylab(yLabel) +  theme_bw() +
-      theme(axis.text = element_text(size=12,hjust = 0.5, color="black"), axis.title = element_text(size=16,hjust = 0.5), axis.title.x = element_blank(), 
-            plot.title = element_text(size=18,hjust = 0.5)) #+   annotation_custom(my_grob) + theme(legend.position = "none")  
-  )
-}
-subsetData <- mergedData[which(!is.na(mergedData$irAE) & mergedData$irAE != "" ), ]
-a <- irAEplots(data = subsetData, yData="FCtfh_oW", yLabel = "FC in Tfh", title="Fold-change cTfh"); a
-b <- irAEplots(data = subsetData, yData="H1N1pdm09.HAI.titer", yLabel = "Baseline H1N1pdm09 titer", title="Baseline HAI"); b
-c <- irAEplots(data = subsetData, yData="logHAI", yLabel = "log baseline HAI titer", title="baseline HAI"); c
-d <- irAEplots(data = subsetData, yData="FChai_late", yLabel = "FC HAI titer", title="Fold-change HAI"); d
-e <- irAEplots(data = subsetData, yData="IgDlo_CD71hi_ActBCells...FreqParent", yLabel = "Baseline ABC (% CD71)", title="ABC"); e
-f <- irAEplots(data = subsetData, yData="IgDlo_CD71hi_CD20loCD71hi...FreqParent", yLabel = "Baseline ASC (% CD71)", title="ASC"); f
-g <- irAEplots(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.aIgG4..batchEffect", yLabel = "aIgG4 medianFI", title="IgG4 in +/+ Tfh"); g
-h <- irAEplots(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.ICOS.", yLabel = "ICOS medianFI", title="ICOS in +/+ Tfh"); h
-i <- irAEplots(data = subsetData, yData="Ki67hiCD38hicTfh_medfi.CD71.", yLabel = "CD71 medianFI", title="CD71 in +/+ Tfh"); i
 
-gridExtra::grid.arrange(a,b,c,d,e,f,g,h,i, nrow=3)
+subsetData <- mergedData[which(!is.na(mergedData$irAE) & mergedData$irAE != "" ), ]
+twoSampleBar(data = subsetData, yData="FCtfh_oW", yLabel = "Fold-change at one week", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE") + 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_FCtfh.pdf", width=4)
+twoSampleBar(data = subsetData, yData="H1N1pdm09.HAI.titer", yLabel = "Baseline H1N1pdm09 titer", title="Baseline HAI", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28)) 
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_baselineHAI.pdf", width=4)
+twoSampleBar(data = subsetData, yData="FChai_late", yLabel = "FC HAI titer", title="Fold-change HAI", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("#FFE6da", "#ff9a6a"))
+twoSampleBar(data = subsetData, yData="IgDlo_CD71hi_ActBCells...FreqParent", yLabel = "Baseline ABC (% CD71)", title="ABC", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("#FFE6da", "#ff9a6a"))
+twoSampleBar(data = subsetData, yData="IgDlo_CD71hi_CD20loCD71hi...FreqParent", yLabel = "Baseline ASC (% CD71)", title="ASC", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("#FFE6da", "#ff9a6a"))
+twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.aIgG4..batchEffect", yLabel = "medianFI aIgG4 - baseline", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("grey90", "#ff9a6a"))  + theme(axis.title.x = element_text(size=28)) # + geom_label_repel(aes(label = Subject),size=3)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_aIgG4.pdf", width=4)
+twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.ICOS.", yLabel = "medianFI ICOS - baseline", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_ICOS.pdf", width=4)
+twoSampleBar(data = subsetData, yData="Ki67hiCD38hicTfh_medfi.CD71.", yLabel = "medianFI CD71 - baseline", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_CD71.pdf", width=4)
 
 
 

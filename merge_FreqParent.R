@@ -1,7 +1,6 @@
-library(ggplot2)
 library(reshape2)
 library(stringr)
-
+sessionInfo()
 
 #  -------------------------------------  MERGE AND CONCATENATE T CELL DATA --------------------------------------------------
 a <- getwd()
@@ -411,15 +410,34 @@ setwd(a)
 
 # -------------------------------------------------------------------------------------------------------------------------------
 
+#  -------------------------------------  MERGE AND CONCATENATE BAA YEAR 3 DATA  --------------------------------------------------
+
+week1 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week1/rherati_20130914_A1V1-091413_Senescence/Analysis/ICOShiCD38hi.csv")
+week2 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week2/rherati_20130920_Week2_Senescence/Analysis/ICOShiCD38hi.csv")
+week3 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week3/rherati_20130925_Week3_Senescence/Analysis/ICOShiCD38hi.csv")
+week4 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week4/rherati_20131002_Week4_Senescence/Analysis/ICOShiCD38hi.csv")
+week5 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week5/rherati_20131009_Week5_Senescence/Analysis/ICOShiCD38hi.csv")
+week6 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week6/rherati_20131017_Week6_Senescence/Analysis/ICOShiCD38hi.csv")
+week7 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week7/rherati_20131023_Week7_Senescence/Analysis/ICOShiCD38hi.csv")
+  week7$X[10] <- "222-055-V1_0.fcs"   # mislabeling of the fcs file
+week8 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week8/rherati_20131030_Week8_Senescence/Analysis/ICOShiCD38hi.csv")
+week9 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week9/rherati_20131108_Week9_Senescence/Analysis/ICOShiCD38hi.csv")
+week10 <- read.csv(file="D:/BAA project/Year3/Data files by week/Aim2 - Senescence and TransFactor/Week10/rherati_20131115_Week10_Senescence/Analysis/ICOShiCD38hi.csv")
+
+BAAyear3long <- rbind(week1,week2,week3,week4,week5,week6,week7,week8,week9,week10); BAAyear3long$X.1 <- NULL; names(BAAyear3long) <- c("file","ICOShiCD38hi_FreqParent")
+BAAyear3long <- BAAyear3long[-grep("222-053",BAAyear3long$file), ]        # exclude 222-053 because of poor quality CXCR5 stain at visit 1
+BAAyear3long$Subject <- substr(BAAyear3long$file, 1, 7);  BAAyear3long <- BAAyear3long[-grep(paste0(c("Mean","SD"), collapse = "|"), BAAyear3long$file),]
+BAAyear3long$Cohort <- "Young"
+BAAyear3long$Cohort[grepl(pattern = "222",x = BAAyear3long$Subject)] <- "Elderly"
+BAAyear3long$Visit <- substr(BAAyear3long$file, 9,10)
+BAAyear3wide <- dcast(BAAyear3long, `Subject` + `Cohort` ~ `Visit`, value.var = c("ICOShiCD38hi_FreqParent"))
+BAAyear3wide$FCtfh <- BAAyear3wide$V2 / BAAyear3wide$V1 
+
+# write.csv(BAAyear3long, file = "D:/Pembro-Fluvac/Analysis/mergedData/BAAyear3long.csv")    
+# write.csv(BAAyear3wide, file = "D:/Pembro-Fluvac/Analysis/mergedData/BAAyear3wide.csv")    
 
 
-
-
-
-
-
-
-
+rm(week1,week2,week3,week4,week5,week6,week7,week8,week9,week10)
 
 
 

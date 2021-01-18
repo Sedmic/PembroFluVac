@@ -125,7 +125,8 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
   if( ! is.factor(data[,xData])) {  data[,xData] <- factor(data[,xData])    }
   # for (i in 1:length(levels(data[,xData]))) { data[, paste(levels(data[,xData])[i])] <- mean(data[which(data[,xData] == levels(data[,xData])[i]), yData], na.rm=T)}   # now mean calculated for each level of xData
   
-  overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T)
+  overTime <- aggregate(x = data[,yData], by= list( data[,xData]), FUN=mean, na.rm = T)
+  names(overTime)[which(names(overTime) == 'Group.1')] <- xData
   names(overTime)[which(names(overTime) == 'x')] <- yData
   
   # ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
@@ -137,7 +138,7 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
   return (
     ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) + 
       geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5) + 
-      geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+      geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity", color='black',size=0.1) + 
       geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() +
       theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
@@ -147,7 +148,7 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
   if (FCplot == F)
     return (
       ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) + 
-        geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+        geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity", color='black',size=0.1) + 
         geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
         ggtitle(title) + ylab(yLabel) +  theme_bw() +
         theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
@@ -156,7 +157,23 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
     )
 }
 
-
+twoSampleBarRock <- function(data, xData, yData, fillParam, title, yLabel, position="left")
+{
+  overTime <- aggregate(x = data[,yData], by= list( data[,xData]), FUN=mean, na.rm = T); 
+  names(overTime)[which(names(overTime) == 'Group.1')] <- xData
+  names(overTime)[which(names(overTime) == 'x')] <- yData
+  justforttest <- data[, c(xData,yData)]; fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
+  pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
+  my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
+  return(
+    ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
+      geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
+      geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
+      ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
+      theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
+            plot.title = element_text(size=28,hjust = 0.5),axis.text.x=element_text(angle=45,vjust=1,hjust=1)) + annotation_custom(my_grob) # + scale_y_continuous(breaks = seq(0,100,0.2),limits=c(0,1))
+    )
+}
 
 univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel, position = "left")
 {
@@ -233,7 +250,7 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
   subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
   return(
     ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
-      geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
+      geom_bar(stat = "summary", aes_string(fill=fillParam),color="black",size=0.1) + 
       geom_path(aes_string(group=groupby), color="grey60") + 
       geom_point(size = 1, color="grey60") + facet_wrap(fillParam ) +   # , scales='free'
       scale_color_manual(values=c("#7FAEDB", "#FFB18C")) + 
@@ -241,7 +258,7 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
       theme(axis.text = element_text(size=18,hjust = 0.5, color="black"), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
             legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white"), 
-            axis.title.x = element_blank()) 
+            axis.title.x = element_blank(), axis.text.x = element_text(angle=45,hjust=1,vjust=1)) 
   )
 }
 
@@ -362,7 +379,7 @@ volcanoPlot <- function( diffExprData, repelThresh, title, leftLabel, rightLabel
 }
 
 
-plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizebyFDR=F)
+plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizebyFDR=F, colorRight="#FFB18C", colorLeft="#7FAEDB")
 {
   mergeResults$NAME <- toTitleCase(tolower(substr(mergeResults$NAME,start =10, stop=50)))
   mergeResults$NAME <- factor(mergeResults$NAME, levels = mergeResults$NAME[order(mergeResults$NES, decreasing = T)])
@@ -372,20 +389,20 @@ plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizeby
   if(sizebyFDR == F){
     return(
       ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES), size=6) + 
-      geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
-      geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+      geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorRight, size=0.01, color="black") +
+      geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorLeft, size=0.01, color="black") +
       coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
-      theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) + 
-      annotation_custom(left_grob) + annotation_custom(right_grob)
+      theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
+      annotation_custom(left_grob) + annotation_custom(right_grob) 
     )}
   if(sizebyFDR == T){
     return(
       ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES, size=FDR.q.val)) + 
-        geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#FFB18C", size=1) +
-        geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
+        geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorRight, size=0.01, color="black") +
+        geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorLeft, size=0.01, color="black") +        
         coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
         theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18), legend.title = element_text(size=12)) + 
-        scale_size( range=c(8,3),name = "False\nDiscovery\nRate") +  
+        scale_size( range=c(8,3),name = "False\nDiscovery\nRate") +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
         annotation_custom(left_grob) + annotation_custom(right_grob)
     )}
 }

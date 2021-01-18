@@ -44,19 +44,17 @@ mergedDataRock <- read.csv(file="D:/Pembro-Fluvac/Analysis/mergedData/Rockefelle
 serology <- read.csv(file= "D:/Pembro-Fluvac/Analysis/mergedData/Rockefeller_Serology.csv", header = T)
 print("Data by year and cohort for serology")
 temp1 <- merge(x = mergedDataRock, y=serology, all = T, suffixes = c(".Tflow",".Serology"), by= c('Subject'))
-table(serology$Cohort, serology$TimeCategory)
 
 TflowRock <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/Rockefeller_Tflow_freqParent.csv", header = T)
 print("Data by year and cohort for T cell flow cytometry for Rockefeller Cohort")
-# temp <- sapply(TflowRock, sd)
-# fit <- lm(data=TflowRock[ , - which( colnames(TflowRock) == "Label" | colnames(TflowRock) == "fcsfile"  | colnames(TflowRock) == 'CD19..CD27.CD38..TCF1hi.freq.1')], formula = Batch  ~ .)
-# a <- as.data.frame(summary(fit)$coefficients)
-# a <- rownames(a[which(a$`Pr(>|t|)` < 0.05), ] )
-# if (length (a) > 0) { colnames(TflowRock) [ grep( paste(a, collapse="|"), colnames(TflowRock)) ] <- paste0( colnames(TflowRock)[ grep( paste(a, collapse="|"), colnames(TflowRock)) ], ".batchEffect" ) }
+
 
 temp2 <- merge(x = temp1, y=TflowRock, all=T, suffixes = c(".temp1",".TflowRock"), by=c('Label'))
-mergedDataRock <- temp2   # annotation_custom(my_grob1) + 
-#   theme(legend.position = "none") 
+
+TmfiRock <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/Rockefeller_Tmfi.csv")
+temp3 <- merge(x = temp2, y=TmfiRock, all=T, suffixes = c(".temp2",".TmfiRock"), by=c('Label'))
+mergedDataRock <- temp3  
+
 mergedDataRock <- mergedDataRock[-which(mergedDataRock$Subject == "13-226-91"),]    # ambiguity about what time points are being studied
 mergedDataRock <- mergedDataRock[-which(mergedDataRock$Subject == "13-226-67"),]    # ambiguity about what time points are being studied
 mergedDataRock <- mergedDataRock[-which(mergedDataRock$Label == "13-226-51E"),]     # two draws at oneWeek, this one is at d10
@@ -86,19 +84,13 @@ FC_response <- merge(x=FC_response, y=FC_response2, by = "Subject"); FC_response
 
 mergedDataRock <- merge(x = mergedDataRock, y= FC_response, all=T, by = c('Subject', 'Cohort'))
 
-# write.csv(mergedDataRock, file = "D:/Pembro-Fluvac/Analysis/mergedDataRock/allmergedDataRock.csv")
-
-
-# mergedDataRock <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedDataRock/allmergedDataRock.csv", stringsAsFactors = F, header = T, row.names = 1)
+# write.csv(mergedDataRock, file = "D:/Pembro-Fluvac/Analysis/mergedData/allmergedDataRock.csv")
+# mergedDataRock <- read.csv(file = "D:/Pembro-Fluvac/Analysis/mergedData/allmergedDataRock.csv", stringsAsFactors = F, header = T, row.names = 1)
 
 mergedDataRock$dummy <- "dummy"
 mergedDataRockComplete <-  mergedDataRock
 
 mergedDataRock <- mergedDataRockComplete
-# mergedDataRock <- mergedDataRock[ grep(paste0(c("aPD1$","Chemo","aPDL1"), collapse = '|'), mergedDataRock$Cohort), ]   # simplify down to aPD1 vs non-aPD1
-# mergedDataRock$Cohort <- ifelse(mergedDataRock$Cohort == 'aPD1', 'aPD1', 'non-aPD1')
-# mergedDataRock$Cohort <- factor(mergedDataRock$Cohort, levels = c("non-aPD1","aPD1"))
-
 mergedDataRock <- mergedDataRock[ -grep(paste(c("IpiNivo"), collapse = "|"), mergedDataRock$Cohort), ]   # leave out aPD1 + TKI and IpiNivo
 mergedDataRock$Cohort <- factor(mergedDataRock$Cohort, levels = c("Chemo","TKI","aPDL1","aPD1","aPD1_TKI"))          
 mergedDataRock$TimeCategory <- factor(mergedDataRock$TimeCategory, levels = c("baseline", "oneWeek","late"))
@@ -120,7 +112,7 @@ ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + #sc
   theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
         plot.title = element_text(size=32,hjust = 0.5)) 
 
-summary(fit<-aov(FCtfh_oW ~ Cohort, data=subsetData)); tukey_hsd(fit)
+summary(fit<-aov(FCtfh_oW ~ Cohort, data=data)); tukey_hsd(fit)
 
 # group & factor by Cohort but will display symbols by treatment
 mergedDataRock$Cohort <- ifelse(mergedDataRock$Cohort == 'aPD1' | mergedDataRock$Cohort == 'aPD1_TKI', 'aPD1', 'non-aPD1')
@@ -150,7 +142,7 @@ pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
 my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
   geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5) + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
   geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
   #ggbeeswarm::geom_quasirandom(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, dodge.width = 0.5) + 
   ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
@@ -182,7 +174,7 @@ pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
 my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=28))) 
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
   geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5) + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
   geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
   #ggbeeswarm::geom_quasirandom(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, dodge.width = 0.5) + 
   ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
@@ -257,7 +249,7 @@ pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
 my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
   geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5) + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
+  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
   geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
   #ggbeeswarm::geom_quasirandom(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, dodge.width = 0.5) + 
   ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
@@ -272,7 +264,7 @@ groupby = "Subject"
 
 subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
 ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
-    geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
+    geom_bar(stat = "summary", aes_string(fill=fillParam), color="black",size=0.1) + 
     geom_path(aes_string(group=groupby), color="grey60") + 
     geom_point(size = 3, color="grey60", aes(shape=TreatmentFactored)) + facet_wrap(fillParam ) +   
     scale_color_manual(values=c("#d9eafb", "#ff9a6a")) + scale_fill_manual(values=c("#d9eafb", "#ff9a6a")) + 
@@ -310,7 +302,7 @@ data=subsetData; xData="TimeCategory"; yData="H1N1pdm09.HAI.titer"; fillParam="C
 groupby = "Subject"
 subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
 ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
-  geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
+  geom_bar(stat = "summary", aes_string(fill=fillParam), color="black",size=0.1) + 
   geom_path(aes_string(group=groupby), color="grey60") + 
   geom_point(size = 3, color="grey60", aes(shape=TreatmentFactored)) + facet_wrap(fillParam ) +   
   scale_color_manual(values=c("#d9eafb", "#ff9a6a")) + scale_fill_manual(values=c("#d9eafb", "#ff9a6a")) + 
@@ -329,7 +321,7 @@ twoSampleBar(data=seroconv, xData="Cohort", yData="FC", fillParam="Cohort", titl
   scale_y_continuous(trans='log2',breaks=c(2^(0:14)), limits = c(1,175)) + scale_fill_manual(values=c("#d9eafb", "#ff9a6a")) + 
   theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1))
 
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/SeroconversionFactor_ROCK.pdf", device = "pdf", width=4.5)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/SeroconversionFactor_ROCK.pdf", device = "pdf", width=3.5)
 
 
 #' ## ----------- Glycosylation analysis --------------------
@@ -341,14 +333,14 @@ data=subsetData; xData="TimeCategory"; yData="IgG1_Total.Galactosylation..G1.G2.
 groupby = "Subject"
 subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
 ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
-  geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
+  geom_bar(stat = "summary", aes_string(fill=fillParam),color="black",size=0.1) + 
   geom_path(aes_string(group=groupby), color="grey60") + 
   geom_point(size = 3, color="grey60", aes(shape=TreatmentFactored)) + facet_wrap(fillParam ) +   
   scale_color_manual(values=c("#d9eafb", "#ff9a6a")) + scale_fill_manual(values=c("#d9eafb", "#ff9a6a")) + 
   ggtitle(title) + ylab(yLabel) + xlab(xLabel)  + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
   theme(axis.text = element_text(size=18,hjust = 0.5, color="black"), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
         strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white"), # legend.position = "none",
-        axis.title.x = element_blank(), axis.text.x = element_text(angle=45, hjust=1,vjust=1))
+        axis.title.x = element_blank(), axis.text.x = element_text(angle=45, hjust=1,vjust=1)) + coord_cartesian(ylim=c(80,100))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/Sialylation_overTime_PerSubject_ROCK.pdf", width = 6)
 
 
@@ -360,7 +352,7 @@ justforttest <- data[, c(xData,yData)]; fit <- rstatix::wilcox_test(justforttest
 pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
 my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData),  color="black", position = position_dodge(), stat = "identity") + 
+  geom_bar(data=overTime, aes_string(x=xData, y=yData),  position = position_dodge(), stat = "identity",color="black",size=0.1) + 
   geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
   ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
   theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
@@ -374,7 +366,7 @@ data=subsetData; xData="TimeCategory"; yData="IgG1_Total.sialylated"; fillParam=
 groupby = "Subject"
 subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
 ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
-  geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
+  geom_bar(stat = "summary", aes_string(fill=fillParam),color="black",size=0.1) + 
   geom_path(aes_string(group=groupby), color="grey60") + 
   geom_point(size = 3, color="grey60", aes(shape=TreatmentFactored)) + facet_wrap(fillParam ) +   
   scale_color_manual(values=c("#d9eafb", "#ff9a6a")) + scale_fill_manual(values=c("#d9eafb", "#ff9a6a")) + 
@@ -387,13 +379,15 @@ ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() +
 
 subsetData <- subset(mergedDataRock, TimeCategory == 'baseline')
 shapiro_test(data = subsetData, vars = c("IgG1_Total.sialylated"))          # not normal distribution so will use nonparametric
+twoSampleBarRock(data=subsetData, xData="Cohort", yData="IgG1_Total.sialylated", fillParam="Cohort", title="Sialylation\nbaseline", yLabel="% anti-H1 IgG1")
+
 data=subsetData; xData="Cohort"; yData="IgG1_Total.sialylated"; fillParam="Cohort"; title="Sialylation\nbaseline"; yLabel="% anti-H1 IgG1"; position="left"
 overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T); names(overTime)[which(names(overTime) == 'x')] <- yData
 justforttest <- data[, c(xData,yData)]; fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
-pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
+pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 2))
 my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData), color="black", position = position_dodge(), stat = "identity") + 
+  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
   geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
   ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
   theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
@@ -410,9 +404,10 @@ wilcox_test(IgG1_Total.sialylated ~ Cohort, data=subsetData)
 subsetData <- subset(mergedDataRock, TimeCategory != 'late')
 data=subsetData; xData="TimeCategory"; yData="Lo.Hi.HA.affinity"; fillParam="Cohort"; title="Affinity"; yLabel="Lo Hi Affinity - H1N1pdm09"; xLabel="TimeCategory";
 groupby = "Subject"
+
 subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
 ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
-  geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
+  geom_bar(stat = "summary", aes_string(fill=fillParam),color="black",size=0.1) + 
   geom_path(aes_string(group=groupby), color="grey60") + 
   geom_point(size = 3, color="grey60", aes(shape=TreatmentFactored)) + facet_wrap(fillParam ) +   
   scale_color_manual(values=c("#d9eafb", "#ff9a6a")) + scale_fill_manual(values=c("#d9eafb", "#ff9a6a")) + 
@@ -425,12 +420,14 @@ ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() +
 
 subsetData <- subset(mergedDataRock, TimeCategory == 'baseline')
 data=subsetData; xData="Cohort"; yData="Lo.Hi.HA.affinity"; fillParam="Cohort"; title="Affinity"; yLabel="Lo Hi Affinity - H1N1pdm09"; position="left"
+twoSampleBarRock(data=subsetData, xData="Cohort", yData="Lo.Hi.HA.affinity", fillParam="Cohort", title="Affinity", yLabel="Lo Hi Affinity - H1N1pdm09")
+
 overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T); names(overTime)[which(names(overTime) == 'x')] <- yData
 justforttest <- data[, c(xData,yData)]; fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
 pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
 my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=24))) 
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
-  geom_bar(data=overTime, aes_string(x=xData, y=yData), color="black", position = position_dodge(), stat = "identity") + 
+  geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
   geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
   ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
   theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
@@ -439,6 +436,7 @@ ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + sca
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/LoHiAffinity_baseline_ROCK.pdf", width = 4)
 wilcox_test(FCCXCL13_oW ~ Cohort, data=subsetData)
 
+
 subsetData <- subset(mergedDataRock, TimeCategory != "oneWeek" &  Cohort!="")
 FC_response <- dcast(subsetData, `Subject` + `Cohort`+ `TreatmentFactored` ~`TimeCategory` , value.var = c("Lo.Hi.HA.affinity"))
 FC_response$FCaffinity_late <- FC_response$`late`/FC_response$`baseline`; FC_response$baseline <- FC_response$late <- NULL
@@ -446,12 +444,12 @@ FC_response$FCaffinity_late <- FC_response$`late`/FC_response$`baseline`; FC_res
 data=FC_response; xData="Cohort"; yData="FCaffinity_late"; fillParam="Cohort"; title="Lo-Hi Affinity"; yLabel="Fold-change (late / baseline)"; position="left"
 overTime <- aggregate(x = data[,yData], by= list(Cohort = data$Cohort), FUN=mean, na.rm = T); names(overTime)[which(names(overTime) == 'x')] <- yData
 justforttest <- data[, c(xData,yData)]; fit <- rstatix::wilcox_test(justforttest, formula = as.formula(paste(colnames(justforttest)[2], "~", paste(colnames(justforttest)[1]), sep = "") ))
-pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 3))
+pValue <- fit$p;   annotationInfo <- paste0("P = ", round(pValue, 2))
 my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=28))) 
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
   geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5) + 
   #geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
-  geom_violin(draw_quantiles = 0.5) + 
+  geom_violin(draw_quantiles = 0.5, size=0.1) + 
   geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
   ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
   theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
@@ -466,7 +464,10 @@ wilcox_test(FCaffinity_late ~ Cohort, data=FC_response)
 #'
 #'
 
-
+subsetData <- mergedDataRock.nolate[which(!is.na(mergedDataRock.nolate$irAE) & mergedDataRock.nolate$irAE != "" ), ]
+twoSampleBar(data = subset(subsetData, TimeCategory=="oneWeek"), yData="FCtfh_oW", yLabel = "Fold-change at one week", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE") + 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_FCtfh.pdf", width=4)
 
 
 
