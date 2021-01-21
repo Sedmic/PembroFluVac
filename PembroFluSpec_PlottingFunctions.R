@@ -141,8 +141,8 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
       geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity", color='black',size=0.1) + 
       geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() +
-      theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
-            plot.title = element_text(size=32,hjust = 0.5)) + 
+      theme(axis.text = element_text(size=28,color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
+            plot.title = element_text(size=32,hjust = 0.5), axis.text.x = element_text(hjust = 1, vjust=1, angle=45)) + 
       annotation_custom(my_grob) + theme(legend.position = "none")
   )
   if (FCplot == F)
@@ -151,8 +151,8 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
         geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity", color='black',size=0.1) + 
         geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.15)) + 
         ggtitle(title) + ylab(yLabel) +  theme_bw() +
-        theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
-              plot.title = element_text(size=32,hjust = 0.5)) + 
+        theme(axis.text = element_text(size=28,color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
+              plot.title = element_text(size=32,hjust = 0.5), axis.text.x = element_text(hjust = 1, vjust=1, angle=45)) + 
         annotation_custom(my_grob) + theme(legend.position = "none")
     )
 }
@@ -171,7 +171,7 @@ twoSampleBarRock <- function(data, xData, yData, fillParam, title, yLabel, posit
     ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.8)) + scale_fill_manual(values = c( "#d9eafb", "#ff9a6a"))  + 
       geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity",color="black",size=0.1) + 
       geom_point(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5, position = position_jitter(width=0.3, seed=58)) +   #48
-      ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(0:2,5:6)) + labs(col="Cohort",shape="Treatment") + 
+      ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(21:25)) + labs(col="Cohort",shape="Treatment") + 
       theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
             plot.title = element_text(size=28,hjust = 0.5),axis.text.x=element_text(angle=45,vjust=1,hjust=1)) + annotation_custom(my_grob) # + scale_y_continuous(breaks = seq(0,100,0.2),limits=c(0,1))
     )
@@ -253,12 +253,12 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
   return(
     ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
       geom_bar(stat = "summary", aes_string(fill=fillParam),color="black",size=0.1) + 
-      geom_path(aes_string(group=groupby), color="grey60") + 
-      geom_point(size = 1, color="grey60") + facet_wrap(fillParam ) +   # , scales='free'
+      geom_path(aes_string(group=groupby), color="grey70", alpha=0.5) + 
+      geom_point(size = 1, color="black", fill="black", alpha=0.5) + facet_wrap(fillParam ) +   # , scales='free'
       scale_color_manual(values=c("#7FAEDB", "#FFB18C")) + 
       scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + 
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
-      theme(axis.text = element_text(size=18,hjust = 0.5, color="black"), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
+      theme(axis.text = element_text(size=18,hjust = 0.5, color="black"), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=36,hjust = 0.5), 
             legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white"), 
             axis.title.x = element_blank(), axis.text.x = element_text(angle=45,hjust=1,vjust=1)) 
   )

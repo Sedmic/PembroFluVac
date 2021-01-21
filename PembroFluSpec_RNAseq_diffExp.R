@@ -1008,7 +1008,9 @@ pathwayPos <- read.csv("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentia
 pathwayNeg <- read.csv("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GSEA/Results/irAE_diffExp_Hallmark.GseaPreranked.1610904182341/gsea_report_for_na_neg_1610904182341.tsv", sep="\t")
 mergeResults <- rbind(pathwayPos, pathwayNeg)
 plotGSEAlollipop( mergeResults, title = "Hallmark pathways", leftLabel = "No irAE", rightLabel = "irAE")
-plotGSEAlollipop( mergeResults, title = "Hallmark pathways", leftLabel = " ", rightLabel = " ", sizebyFDR = T, colorRight = "#ff9a6a", colorLeft="grey90")
+plotGSEAlollipop( mergeResults, title = "Hallmark pathways", leftLabel = " ", rightLabel = " ", sizebyFDR = T, colorRight = "#ff9a6a", colorLeft="grey90") + 
+  theme(axis.text.y = element_text(angle=0, hjust=1,vjust=1), axis.text.x = element_text(angle=-90,hjust=1,vjust=0.4)) + 
+  scale_y_continuous(breaks=seq(-3,3,1), limits = c(-3,3), minor_breaks = NULL )
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/irAE_HallmarkPathways_baselineHiHi.pdf", device="pdf", width=7, height=9)
 
 
