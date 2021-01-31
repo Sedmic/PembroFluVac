@@ -1,18 +1,25 @@
 #+ fig.width=6, fig.height=6
 #' ##--------- call libraries --
-library("grid")
+library("genefilter")
 library("ggplot2")
-library("gplots")
-library("viridis")
-library("reshape2")
-library("gridExtra")
+library("grid");  library("reshape2")
+library("ggrepel")
 library("RColorBrewer")
+library("DESeq2")
+library("BiocParallel")
+library("WGCNA")
+library("Rtsne")
+library("pheatmap")
+library("tools")
+library("viridis")
 library("scales")
-library("stringr")
-library("rstatix")
-library("dplyr")
-library("tidyr")
 library("gridExtra")
+library("GSVA")
+library("GSEABase")
+library("stringr")
+library("dplyr")
+library("rstatix")
+library("tidyr")
 source('D:/Pembro-Fluvac/Analysis/Ranalysis/PembroFluSpec_PlottingFunctions.R')
 
 #' ## ----------- merge & qc data from spreadsheets  --------------------
@@ -1175,7 +1182,7 @@ t_test(data = subset(subsetData, Cohort == "Healthy"), IgG1_Total.sialylated~ Ti
 t_test(data = subset(subsetData, Cohort == "aPD1"), IgG1_Total.sialylated ~ TimeCategory, paired=T)
 
 univScatter(data = subset(mergedData, TimeCategory == "baseline"), yData = "IgG1_Total.sialylated", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
-            title = "Cycle of IT vs IgG1 sialylated", yLabel= "1gG1 sialylated", xLabel = "Cycle of immunotherapy" )
+            title = "Cycle of IT vs IgG1 sialylated", yLabel= "IgG1 sialylated", xLabel = "Cycle of immunotherapy" )
 
 univScatter(data = subset(mergedData, TimeCategory == "baseline" & Cohort == "aPD1"), yData = "IgG1_Total.sialylated", xData = "IgG1_Total.Galactosylation..G1.G2.", 
             fillParam = "dummy", title = "aPD1: Sialylation vs Glycosylation", yLabel= "Sialylation (% anti-H1 IgG1)", xLabel = "Total galactosylation (% anti-H1 IgG1)" )
@@ -1350,11 +1357,13 @@ ggplot(subsetData, aes(x=dateDiff, y=Subject)) +
 
 subsetData <- mergedData[which(!is.na(mergedData$irAE) & mergedData$irAE != "" ), ]
 twoSampleBar(data = subsetData, yData="FCtfh_oW", yLabel = "Fold-change at one week", title="Post-vax\nICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE") + 
-  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+  theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0)) +
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) 
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_FCtfh.pdf", width=3.5)
 twoSampleBar(data = subsetData, yData="H1N1pdm09.HAI.titer", yLabel = "Baseline H1N1pdm09 titer", title="Baseline HAI", xData = "irAE",fillParam = "irAE")+ 
-  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28)) 
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_baselineHAI.pdf", width=4)
+  theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0), plot.title = element_text(size=28)) + 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) 
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_baselineHAI.pdf", width=4.5)
 twoSampleBar(data = subsetData, yData="FChai_late", yLabel = "FC HAI titer", title="Fold-change HAI", xData = "irAE",fillParam = "irAE")+ 
   scale_fill_manual(values = c("#FFE6da", "#ff9a6a"))
 twoSampleBar(data = subsetData, yData="IgDlo_CD71hi_ActBCells...FreqParent", yLabel = "Baseline ABC (% CD71)", title="ABC", xData = "irAE",fillParam = "irAE")+ 
@@ -1362,18 +1371,36 @@ twoSampleBar(data = subsetData, yData="IgDlo_CD71hi_ActBCells...FreqParent", yLa
 twoSampleBar(data = subsetData, yData="IgDlo_CD71hi_CD20loCD71hi...FreqParent", yLabel = "Baseline ASC (% CD71)", title="ASC", xData = "irAE",fillParam = "irAE")+ 
   scale_fill_manual(values = c("#FFE6da", "#ff9a6a"))
 twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.aIgG4..batchEffect", yLabel = "medianFI aIgG4", title="baseline\nICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
-  scale_fill_manual(values = c("grey90", "#ff9a6a"))  + theme(axis.title.x = element_text(size=28)) # + geom_label_repel(aes(label = Subject),size=3)
+  scale_fill_manual(values = c("grey90", "#ff9a6a"))  + theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0)) # + geom_label_repel(aes(label = Subject),size=3)
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_aIgG4.pdf", width=4)
 twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.ICOS.", yLabel = "medianFI ICOS", title="baseline\nICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
-  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_ICOS.pdf", width=4)
 twoSampleBar(data = subsetData, yData="Ki67hiCD38hicTfh_medfi.CD71.", yLabel = "medianFI CD71 - baseline", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
+  theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0), plot.title = element_text(size=28)) + 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) 
+twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.PD1.", yLabel = "medianFI PD1 - baseline", title="ICOS+CD38+ cTfh", xData = "irAE", fillParam = "irAE")+ 
+  theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0), plot.title = element_text(size=28)) + 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) 
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_PD1.pdf", width=4.5)
+
+
+
+
+twoSampleBar(data = subsetData, yData="IgG1_Total.sialylated", yLabel = "Sialylation (% anti-H1 IgG1)", title="Sialylation", xData = "irAE",fillParam = "irAE")+ 
   scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_CD71.pdf", width=4)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_sialylation-baseline.pdf", width=4)
 
+twoSampleBar(data = subsetData, yData="IgG1sial_oW", yLabel = "Fold-change sialylation", title="Fold-change sialylation", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_sialylation-foldchange.pdf", width=4)
 
+twoSampleBar(data = subsetData, yData="IgG1_Total.Galactosylation..G1.G2.", yLabel = "Galactosylation (% anti-H1 IgG1)", title="Galactosylation", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_galactosylation-baseline.pdf", width=4)
 
-
-
+twoSampleBar(data = subsetData, yData="Lo.Hi.HA.affinity", yLabel = "Lo Hi Affinity", title="Affinity", xData = "irAE",fillParam = "irAE")+ 
+  scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_affinity-baseline.pdf", width=4)
 
 

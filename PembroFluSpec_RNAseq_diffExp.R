@@ -16,6 +16,8 @@ library("GSVA")
 library("GSEABase")
 library("stringr")
 library("dplyr")
+library("rstatix")
+library("tidyr")
 sessionInfo()
 source('D:/Pembro-Fluvac/Analysis/Ranalysis/PembroFluSpec_PlottingFunctions.R')
 
@@ -954,13 +956,16 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1
 
 
 irAEonly <- subset(phenoRNAHiHi, !is.na(phenoRNAHiHi$irAE) & phenoRNAHiHi$irAE != "")
-twoSampleBar(data=irAEonly, xData = "irAE", yData="ICOS", fillParam = "irAE", title="ICOS", yLabel="log counts") + theme(plot.title = element_text(face='italic'))+
+twoSampleBar(data=irAEonly, xData = "irAE", yData="ICOS", fillParam = "irAE", title="ICOS", yLabel="log counts") + 
+  theme(plot.title = element_text(face='italic'), axis.title.x = element_text(size=28), axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0))+
   scale_fill_manual(values = c("grey90", "#ff9a6a"))+ coord_cartesian(ylim = c(9.5,11)) 
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/irAE_ICOS.pdf", width=4)
-twoSampleBar(data=irAEonly, xData = "irAE", yData="PDCD1", fillParam = "irAE", title="PDCD1", yLabel="log counts") + theme(plot.title = element_text(face='italic'))+
+twoSampleBar(data=irAEonly, xData = "irAE", yData="PDCD1", fillParam = "irAE", title="PDCD1", yLabel="log counts") + 
+  theme(plot.title = element_text(face='italic'), axis.title.x = element_text(size=28), axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0))+
   scale_fill_manual(values = c("grey90", "#ff9a6a"))+ coord_cartesian(ylim = c(2,7))
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/irAE_PDCD1.pdf", width=4)
-twoSampleBar(data=irAEonly, xData = "irAE", yData="TFRC", fillParam = "irAE", title="TFRC", yLabel="log counts") + theme(plot.title = element_text(face='italic'))+
+twoSampleBar(data=irAEonly, xData = "irAE", yData="TFRC", fillParam = "irAE", title="TFRC", yLabel="log counts") + 
+  theme(plot.title = element_text(face='italic'), axis.title.x = element_text(size=28), axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0))+
   scale_fill_manual(values = c("grey90", "#ff9a6a"))+ coord_cartesian(ylim = c(7,8.5))
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/irAE_TFRC.pdf", width=4)
 
