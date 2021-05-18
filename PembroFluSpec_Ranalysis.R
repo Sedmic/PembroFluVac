@@ -21,7 +21,7 @@ library("dplyr")
 library("rstatix")
 library("tidyr")
 source('D:/Pembro-Fluvac/Analysis/Ranalysis/PembroFluSpec_PlottingFunctions.R')
-
+sessionInfo()
 #' ## ----------- merge & qc data from spreadsheets  --------------------
 #'
 #'
@@ -164,7 +164,18 @@ simplifiedDataAvail <- cbind(simplifiedDataAvail, Cohort = (as.numeric(saveCohor
 names(simplifiedDataAvail) <- c("Tflow_freq","Serology","Bflow_freq", "Tflow_medFI","Demographics","Bflow_medFI","Cohort", "Year")
 pheatmap(as.data.frame(t(simplifiedDataAvail)), cluster_col = F,color=gray.colors(100, start=1,end=0), fontsize_row = 18, fontsize_col = 6, main = "Data available by subject"
          # , filename = "D:/Pembro-Fluvac/Analysis/Images/dataAvailable.pdf"
-         ); dev.off()
+         )
+dev.off()
+
+
+median(demog$Age[which(demog$Cohort == "aPD1" & demog$Current.Immunotherapy != "Ipi/Nivo")])
+sd(demog$Age[which(demog$Cohort == "aPD1" & demog$Current.Immunotherapy != "Ipi/Nivo")])
+
+table(demog$Current.Immunotherapy[which(demog$Current.Immunotherapy != "Ipi/Nivo")])
+x <- demog[which(demog$Cohort == "aPD1"),] 
+table(x$Sex)
+x <- demog[which(demog$Cohort == "Healthy"),] 
+table(x$Sex)
 
 #' ## ----------- Cohort description --------------------
 #'
@@ -172,11 +183,18 @@ pheatmap(as.data.frame(t(simplifiedDataAvail)), cluster_col = F,color=gray.color
  
 table(mergedData$Cohort, mergedData$Sex, mergedData$Year)  
 table(serology$Cohort, serology$TimeCategory, serology$Year, !is.na(serology$H1N1pdm09.HAI.titer))
+subsetData <- subset(demog, Current.Immunotherapy %in% c("Pembrolizumab","Nivolumab"))
+table(subsetData$Current.Immunotherapy)
+table(subsetData$Cohort, subsetData$Sex)
+table(demog$Cohort, demog$Sex)
 ggplot( data = subset(mergedData, Cohort == "aPD1" & TimeCategory == "baseline"), aes(x=Cycle.of.Immunotherapy)) + geom_histogram(color="white",fill="#FFB18C") + 
-  theme_bw() + theme(axis.text=element_text(color="black",size=18), axis.title=element_text(color="black",size=24)) + scale_x_continuous(breaks=seq(0,30,5)) 
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/CyclesImmunotherapy.pdf", device = 'pdf', height=3)
+  ggtitle("Cohort 2 - aPD1 cohort") +  theme_bw() + 
+  theme(axis.text=element_text(color="black",size=18), axis.title=element_text(color="black",size=24), plot.title = element_text(size=24)) + scale_x_continuous(breaks=seq(0,30,5)) 
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/CyclesImmunotherapy.pdf", device = 'pdf', height=3, width=8)
 
 median(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Cycle.of.Immunotherapy'], na.rm = T)  
+sd(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Cycle.of.Immunotherapy'], na.rm = T)  
+
 paste("Median Age aPD1: ", median(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)  )
 paste("Median Age Healthy: ", median(mergedData[which(mergedData$Cohort == "Healthy" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)   )
 paste("Range Age aPD1: ", range(mergedData[which(mergedData$Cohort == "aPD1" & mergedData$TimeCategory == "baseline"), 'Age'], na.rm = T)  )
@@ -761,6 +779,7 @@ univScatter(data = oneWeek, yData = "IgDlo_CD71hi_ActBCells...FreqParent", xData
 # ************** different denominator *********************
 oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
 oneWeek$IgDlo_CD71hi_ActBCells...FreqParent <-  oneWeek$IgDlo_CD71hi_ActBCells...FreqParent * oneWeek$IgDlo_CD71hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent / 10000
+
 subsetData1 <- subset(oneWeek, Cohort == "Healthy"   )   
 subsetData2 <- subset(oneWeek, Cohort == "aPD1"  )      
 bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "IgDlo_CD71hi_ActBCells...FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
@@ -771,8 +790,56 @@ univScatter(data = oneWeek, yData = "IgDlo_CD71hi_ActBCells...FreqParent", xData
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_ABC-71hi-20hi-d7_freqCD19_univ.pdf", device="pdf")
 
 
-oneWeek$CD27hiCD38hi_..FreqParent <-  oneWeek$CD27hiCD38hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent /100
+
+
+# ************** correlations to Tfh responses *********************
+baseline <- subset(mergedData, TimeCategory == "baseline")
+baseline$IgDlo_CD71hi_ActBCells...FreqParent <-  baseline$IgDlo_CD71hi_ActBCells...FreqParent * baseline$IgDlo_CD71hi_..FreqParent * baseline$CD19hi_NotNaiveB_freqParent / 10000
+baseline$IgDlo_CD71hi_CD20loCD71hi...FreqParent <-  baseline$IgDlo_CD71hi_CD20loCD71hi...FreqParent * baseline$IgDlo_CD71hi_..FreqParent * baseline$CD19hi_NotNaiveB_freqParent / 10000
+
+subsetData1 <- subset(baseline, Cohort == "Healthy"   )   
+subsetData2 <- subset(baseline, Cohort == "aPD1"  )      
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "IgDlo_CD71hi_ActBCells...FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "ABC at baseline", yLabel= "ABC (% CD19)", xLabel = "ICOS+CD38+ (% cTfh)") + coord_cartesian(xlim=c(0,7.5),ylim=c(0,3))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d0_vs_ABC-71hi-20hi-d0_freqCD19_biv.pdf", device="pdf")
+
+
+subsetData1 <- subset(baseline, Cohort == "Healthy"   )   
+subsetData2 <- subset(baseline, Cohort == "aPD1"  )      
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "IgDlo_CD71hi_CD20loCD71hi...FreqParent", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "ASC at baseline", yLabel= "ASC (% CD19)", xLabel = "ICOS+CD38+ (% cTfh)") + coord_cartesian(xlim=c(0,7.5),ylim=c(0,3))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d0_vs_ASC-71hi-20lo-d0_freqCD19_biv.pdf", device="pdf")
+
+cTfhCorrel <- function( data, subset )
+{
+  z <- vector()
+  z[1] <- subset
+  z[2] <- round(cor(data[ which(data$Cohort == "Healthy"), subset], data[ which(data$Cohort == "Healthy") ,"cTfh_ICOShiCD38hi_..FreqParent"], 
+                    method = "pearson", use = "complete.obs"), 2)
+  z[3] <- round(cor(data[ which(data$Cohort == "aPD1"), subset], data[ which(data$Cohort == "aPD1"),"cTfh_ICOShiCD38hi_..FreqParent"], 
+                    method = "pearson", use = "complete.obs"), 2)
+  return(z)
+}
+result <- data.frame(CellType = 0, Healthy = 0, aPD1 = 0)
+result[1,] <- cTfhCorrel(baseline, subset = "IgDlo_CD71hi_ActBCells...FreqParent")
+result[2,] <- cTfhCorrel(baseline, subset = "IgDlo_CD71hi_CD20loCD71hi...FreqParent")
+result$CellType <- str_replace(result$CellType, "IgDlo_CD71hi_ActBCells...FreqParent", "ABC \n(% CD19)")
+result$CellType <- str_replace(result$CellType, "IgDlo_CD71hi_CD20loCD71hi...FreqParent", "ASC \n(% CD19)")
+result <- melt(result, id.vars = "CellType", measure.vars = c("Healthy","aPD1")); result$value <- as.numeric(result$value)
+result$CellType <- factor(result$CellType, levels = c("ASC \n(% CD19)",  "ABC \n(% CD19)"))
+ggplot(result, aes(x=CellType, fill=variable, color="bl")) + geom_bar(aes(y = value), stat='identity', position="dodge" ) + theme_bw()  + 
+  scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + scale_color_manual(values="black") + ggtitle("Correlation with \nTfh responses at baseline") + 
+  ylab("Pearson r") + 
+  theme(axis.text.x = element_text(angle = 0), axis.title = element_text(size=16,hjust = 0.5), plot.title = element_text(size=18,hjust = 0.5), 
+        axis.title.x = element_blank(), axis.text = element_text(size=16, color="black"), legend.position = "none") + 
+  scale_y_continuous(breaks = seq(-1,1,0.1), limits=c(-0.2,0.6))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d0_vs_various-d0_pearsons_freqCD19.pdf", device = "pdf", width=4, height=6)
+
+
+
+oneWeek <- subset(mergedData, TimeCategory == "oneWeek")
 oneWeek$IgDlo_CD71hi_ActBCells...FreqParent <-  oneWeek$IgDlo_CD71hi_ActBCells...FreqParent * oneWeek$IgDlo_CD71hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent / 10000
+oneWeek$IgDlo_CD71hi_CD20loCD71hi...FreqParent <-  oneWeek$IgDlo_CD71hi_CD20loCD71hi...FreqParent * oneWeek$IgDlo_CD71hi_..FreqParent * oneWeek$CD19hi_NotNaiveB_freqParent / 10000
 
 cTfhCorrel <- function( data, subset )
 {
@@ -786,11 +853,8 @@ cTfhCorrel <- function( data, subset )
 }
 result <- data.frame(CellType = 0, Healthy = 0, aPD1 = 0)
 result[1,] <- cTfhCorrel(oneWeek, subset = "IgDlo_CD71hi_ActBCells...FreqParent")
-# fit <- lm(oneWeek$CD27hiCD38hi_..FreqParent ~  oneWeek$cTfh_ICOShiCD38hi_..FreqParent); outlier <- which(cooks.distance(fit) == max(cooks.distance(fit)))       # one row identified with high Cook's distance
-# result[2,] <- cTfhCorrel(oneWeek[ -as.numeric(names(outlier)), ], subset = "CD27hiCD38hi_..FreqParent")
 result[2,] <- cTfhCorrel(oneWeek, subset = "IgDlo_CD71hi_CD20loCD71hi...FreqParent")
 result$CellType <- str_replace(result$CellType, "IgDlo_CD71hi_ActBCells...FreqParent", "ABC \n(% CD19)")
-#result$CellType <- str_replace(result$CellType, "CD27hiCD38hi_..FreqParent", "CD27+CD38+ PB")
 result$CellType <- str_replace(result$CellType, "IgDlo_CD71hi_CD20loCD71hi...FreqParent", "ASC \n(% CD19)")
 result <- melt(result, id.vars = "CellType", measure.vars = c("Healthy","aPD1")); result$value <- as.numeric(result$value)
 result$CellType <- factor(result$CellType, levels = c("ASC \n(% CD19)",  "ABC \n(% CD19)"))
@@ -869,8 +933,9 @@ Anova(fit <- lm( value ~ Cohort * TimeCategory, data = melted)); tukey_hsd(fit)
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 prePostTime(data = subsetData, xData = "TimeCategory", yData = "H1N1pdm09.HAI.titer", fillParam = "Cohort", title = "HAI titers over time", xLabel = "TimeCategory",
             yLabel = "HAI titer", groupby = "Subject") + scale_y_continuous(trans='log2', breaks=2^(2:13))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAItiter_late_byCohort_persubject.pdf", device="pdf", width=5.5)
 
-subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")
+# subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")
 twoSampleBar(data=subsetData, xData="Cohort", yData="H1N1pdm09.HAI.titer", fillParam="Cohort", batch = "Year",title="All yrs: HAI titers at d0", yLabel="H1N1pdm09 titer") + 
   scale_y_continuous(trans='log2', breaks=c(2^(2:14) ) ) +  coord_cartesian(ylim = c(4,8192))
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
@@ -1012,7 +1077,7 @@ subsetData <- subset(mergedData, Cohort != "nonPD1" )
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG1_Total.afucosylated", fillParam = "Cohort", title = "IgG1 afucosylation", xLabel = "TimeCategory",
             yLabel = "anti-H1 Afucosylation (% abund)", groupby = "Subject")  + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,30) )
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1afucosylation_overTime.pdf")
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1afucosylation_overTime.pdf", width=6)
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG2_Total.afucosylated", fillParam = "Cohort", title = "IgG2 afucosylation over time", xLabel = "TimeCategory",
             yLabel = "Afucosylation (% abundance, anti-H1)", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,30))
@@ -1022,7 +1087,7 @@ prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.afucosylate
 # ***************************    Total Bisection   *******************************
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG1_Total.Bisection", fillParam = "Cohort", title = "IgG1 bisection", xLabel = "TimeCategory",
             yLabel = "% anti-H1 IgG1", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,30) )
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1bisection_overTime.pdf")
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1bisection_overTime.pdf", width=6)
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG2_Total.Bisection", fillParam = "Cohort", title = "IgG2 bisection over time", xLabel = "TimeCategory",
             yLabel = "Bisection (% abundance, anti-H1)", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,30) )
@@ -1047,27 +1112,30 @@ melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort','Year
 prePostTimeAveraged(melted, title = "Total galactosylation", xLabel = NULL, yLabel = "% anti-H1 IgG1") + 
   scale_y_continuous(breaks=seq(0,99,1), limits = c(90,100))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_totGalactosylation_overTime.pdf")
-melted %>%  anova_test(value ~ TimeCategory+Cohort )                        # two-way anova without interaction term 
+# melted %>%  anova_test(value ~ TimeCategory+Cohort )                        # two-way anova without interaction term 
+Anova(fit <- lm( value ~ Cohort * TimeCategory, data = melted)); tukey_hsd(fit)
+
+
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG1_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG1 total galactosylation", 
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG1", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) ) + 
   coord_cartesian(ylim = c(90,100))
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_Tot-galactosylation_overTime_perSubject.pdf", width=8)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_Tot-galactosylation_overTime_perSubject.pdf", width=6.5)
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG2_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG2 total galactosylation", 
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG2", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) )+ 
   coord_cartesian(ylim = c(80,100))
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG2_Tot-galactosylation_overTime_perSubject.pdf", width=8)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG2_Tot-galactosylation_overTime_perSubject.pdf", width=6.5)
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG3/4 total galactosylation", 
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG3/4", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) )+ 
   coord_cartesian(ylim = c(50,100))
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG34_Tot-galactosylation_overTime_perSubject.pdf", width=8)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG34_Tot-galactosylation_overTime_perSubject.pdf", width=6.5)
 
 
 twoSampleBar(data=subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"), xData="Cohort", yData="IgG1_Total.Galactosylation..G1.G2.", fillParam="Cohort", 
              title="Total galactosylation\nbaseline", yLabel="% anti-H1 IgG1") + 
-  scale_y_continuous(breaks = seq(0,100,2)) +   coord_cartesian(ylim = c(88,100))
+  scale_y_continuous(breaks = seq(0,100,2)) +   coord_cartesian(ylim = c(88,100)) 
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_totGalactosylation_bL.pdf", width=4.5)
 
 univScatter(data = subset(mergedData, TimeCategory == "baseline"), yData = "IgG1_Total.Galactosylation..G1.G2.", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
@@ -1087,7 +1155,7 @@ prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.G0", fillPa
             yLabel = "% anti-H1 IgG3/4", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,30) )
 
 twoSampleBar(data=subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"), xData="Cohort", yData="IgG1_Total.G0", fillParam="Cohort", 
-             title="G0 Galactosylation\nbaseline", yLabel="% anti-H1 IgG1") + scale_y_continuous(breaks = seq(0,100,2)) + 
+             title="G0 - baseline", yLabel="% anti-H1 IgG1") + scale_y_continuous(breaks = seq(0,100,2)) + 
   coord_cartesian(ylim = c(0,10))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_G0_Galactosylation_bL.pdf", width=4.5)
 
@@ -1105,7 +1173,7 @@ prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.G1", fillPa
             yLabel = "G1 Galactosylation (% abundance, anti-H1)", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) )
 
 twoSampleBar(data=subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"), xData="Cohort", yData="IgG1_Total.G1", fillParam="Cohort", 
-             title="G1 Galactosylation\nbaseline", yLabel="% anti-H1 IgG1") + scale_y_continuous(limits = c(0,70), breaks = seq(0,100,10)) 
+             title="G1 - baseline", yLabel="% anti-H1 IgG1") + scale_y_continuous(limits = c(0,70), breaks = seq(0,100,10)) 
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_G1_Galactosylation_bL.pdf", width=4.5)
 
 univScatter(data = subset(mergedData, TimeCategory == "baseline"), yData = "IgG1_Total.G1", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
@@ -1121,7 +1189,7 @@ prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.G2", fillPa
             yLabel = "G2 Galactosylation (% abundance, anti-H1)", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,80) )
 
 twoSampleBar(data=subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"), xData="Cohort", yData="IgG1_Total.G2", fillParam="Cohort", 
-             title="G2 Galactosylation\nbaseline", yLabel="% anti-H1 IgG1") + scale_y_continuous(limits = c(0,80), breaks = seq(0,100,10)) 
+             title="G2 - baseline", yLabel="% anti-H1 IgG1") + scale_y_continuous(limits = c(0,80), breaks = seq(0,100,10)) 
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_G2_Galactosylation_bL.pdf", width=4.5)
 
 
@@ -1135,24 +1203,25 @@ prePostTimeAveraged(melted, title = "Sialylation", xLabel = NULL, yLabel = "% an
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_sialylation_overTime.pdf")
 
 melted %>%  anova_test(value ~ TimeCategory+Cohort )                        # two-way anova without interaction term 
+Anova(fit <- lm( value ~ Cohort * TimeCategory, data = melted)); tukey_hsd(fit)
 
 
 twoSampleBar(data=subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"), xData="Cohort", yData="IgG1_Total.sialylated", fillParam="Cohort", 
-             title="Baseline", yLabel="anti-H1 IgG1 Sialylation (% abund)") + scale_y_continuous(limits = c(0,40), breaks = seq(0,50,5))
+             title="Sialylation\nbaseline", yLabel="% anti-H1 IgG1") + scale_y_continuous(limits = c(0,40), breaks = seq(0,50,5))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1sialylation_bL.pdf", width=4)
 twoSampleBar(data=subset(mergedData, Cohort != "nonPD1" & TimeCategory == "oneWeek"), xData="Cohort", yData="IgG1_Total.sialylated", fillParam="Cohort", 
-             title="One week", yLabel="anti-H1 IgG1 Sialylation (% abund)")+ scale_y_continuous(limits = c(0,40), breaks = seq(0,50,5))
+             title="One week", yLabel="Sialylation (% anti-H1 IgG1)")+ scale_y_continuous(limits = c(0,40), breaks = seq(0,50,5))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1sialylation_oW.pdf", width=4)
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG1_Total.sialylated", fillParam = "Cohort", title = "IgG1 sialylation", xLabel = "TimeCategory",
             yLabel = "% anti-H1 IgG1", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,10), limits = c(0,40) )
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_sialylation_overTime_perSubject.pdf")
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_sialylation_overTime_perSubject.pdf", width=6)
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG2_Total.sialylated", fillParam = "Cohort", title = "IgG2 sialylation", xLabel = "TimeCategory",
             yLabel = "% anti-H1 IgG2", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,10), limits = c(0,40) )
-#  ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG2_sialylation_overTime_perSubject.pdf")
+ # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG2_sialylation_overTime_perSubject.pdf", width=6)
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.sialylated", fillParam = "Cohort", title = "IgG3/4 sialylation", xLabel = "TimeCategory",
             yLabel = "% anti-H1 IgG3/4", groupby = "Subject") + scale_y_continuous(breaks=seq(0,240,10), limits = c(0,40) )
-#  ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG34_sialylation_overTime_perSubject.pdf")
+ # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG34_sialylation_overTime_perSubject.pdf", width=6)
 
 
 summary(lm( FChai_late ~ Cohort + Year + IgG1sial_oW, data=subsetData))
@@ -1184,16 +1253,13 @@ t_test(data = subset(subsetData, Cohort == "aPD1"), IgG1_Total.sialylated ~ Time
 univScatter(data = subset(mergedData, TimeCategory == "baseline"), yData = "IgG1_Total.sialylated", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
             title = "Cycle of IT vs IgG1 sialylated", yLabel= "IgG1 sialylated", xLabel = "Cycle of immunotherapy" )
 
-univScatter(data = subset(mergedData, TimeCategory == "baseline" & Cohort == "aPD1"), yData = "IgG1_Total.sialylated", xData = "IgG1_Total.Galactosylation..G1.G2.", 
-            fillParam = "dummy", title = "aPD1: Sialylation vs Glycosylation", yLabel= "Sialylation (% anti-H1 IgG1)", xLabel = "Total galactosylation (% anti-H1 IgG1)" )
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_sial-vs-TotGalactosyl_correlation_aPD1.pdf", width=8)
+bivScatter(data1 = subset(mergedData, TimeCategory == "baseline" & Cohort == "Healthy"), data2 = subset(mergedData, TimeCategory == "baseline" & Cohort == "aPD1"),
+          name1 = "Healthy", name2 = "aPD1", xData = "IgG1_Total.Galactosylation..G1.G2.", yData = "IgG1_Total.sialylated", fillParam = "Cohort", 
+          title = "Sialylation vs Galactosylation", xLabel = "Total galactosylation (% anti-H1 IgG)", yLabel = "Sialylation (% anti-H1 IgG") + 
+  coord_cartesian(ylim = c(0,30), xlim = c(90,99))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_sial-vs-TotGalactosyl_correlation_twoCohorts.pdf", width=8)
 
-
-univScatter(data = subset(mergedData, TimeCategory == "baseline" & Cohort == "Healthy"), yData = "IgG1_Total.sialylated", xData = "IgG1_Total.Galactosylation..G1.G2.", 
-            fillParam = "dummy", title = "Healthy: Sialylation vs Glycosylation", yLabel= "Sialylation (% anti-H1 IgG1)", xLabel = "Total galactosylation (% anti-H1 IgG1)" )
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_sial-vs-TotGalactosyl_correlation_HC.pdf", width=8)
-
-
+ 
 # ***************************    Affinity   *******************************
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
@@ -1201,6 +1267,8 @@ melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort','Year
 prePostTimeAveraged(melted, title = "anti-HA Affinity", xLabel = NULL, yLabel = "Lo Hi HA affinity") + scale_y_continuous(breaks=seq(0,99,0.03))
 # ggsave (filename = "D:/Pembro-Fluvac/Analysis/Images/antiHA-affinity_overTime_LoHi.pdf")
 melted %>%  anova_test(value ~ TimeCategory+Cohort )                        # two-way anova without interaction term 
+Anova(fit <- lm( value ~ Cohort * TimeCategory, data = melted)); tukey_hsd(fit)
+
 
 univScatter(data = subsetData, xData = "Lo.Hi.HA.affinity", yData = "H1N1pdm09.HAI.titer", fillParam = "dummy", 
             title = "HAI titer incr with affinity", xLabel= "Lo Hi HA affinity", yLabel = "HAI titer - H1N1pdm09") + scale_y_continuous(trans = "log", breaks = 2^(1:12)) +
@@ -1229,25 +1297,23 @@ pValue <- fit$p
 annotationInfo <- paste0("P = ", round(pValue, 2)); my_grob = grobTree(textGrob(annotationInfo, x=0.03,  y=0.93, hjust=0, gp=gpar(col="black", fontsize=28)))
 ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) + 
   geom_hline(yintercept=1, linetype="dashed", color = "black", size=0.5) + 
-  geom_violin(draw_quantiles = 0.5) + 
-  #geom_bar(data=overTime, aes_string(x=xData, y=yData), position = position_dodge(), stat = "identity") + 
-  geom_point(size=7, pch=21, fill="black", color="white", alpha=0.35, position = position_jitter(width=0.15, seed = 46)) + 
+  geom_violin(draw_quantiles = 0.5) + ggbeeswarm::geom_quasirandom(size=7, pch=21, fill="black", color="white", alpha=0.35) + 
   ggtitle(title) + ylab(yLabel) +  theme_bw() +
   theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
-        plot.title = element_text(size=32,hjust = 0.5)) + 
+        plot.title = element_text(size=32,hjust = 0.5), axis.text.x = element_text(angle=45, hjust=1,vjust=1)) + 
   annotation_custom(my_grob) + theme(legend.position = "none") + scale_y_continuous(breaks=seq(0,99,0.25), limits = c(0.75,1.75))
-# ggsave (filename = "D:/Pembro-Fluvac/Analysis/Images/antiHA-affinity_FC_LoHi.pdf", width=4)
+# ggsave (filename = "D:/Pembro-Fluvac/Analysis/Images/antiHA-affinity_FC_LoHi.pdf", width=4.25)
 
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("X1.Kd.HA")); melted$value <- 1/melted$value
-prePostTimeAveraged(melted, title = "HA EC50/Kd by ELISA", xLabel = NULL, yLabel = "1 / Concentration (ug/mL)") + scale_y_continuous(breaks=seq(0,99,0.25))
+prePostTimeAveraged(melted, title = "HA EC50/Kd", xLabel = NULL, yLabel = "1 / Concentration (ug/mL)") + scale_y_continuous(breaks=seq(0,99,0.25))
 summary(fit <- lm( data = mergedData, X1.Kd.HA ~ Cohort  + TimeCategory))
-summary(fit <- aov(formula = X1.Kd.HA ~ Cohort  + TimeCategory + Cohort:TimeCategory, data = mergedData)); tukey_hsd(fit)
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_overTime.pdf", device="pdf", height=8, width=8)
+summary(fit <- aov(formula = X1.Kd.HA ~ Cohort  + TimeCategory + Cohort:TimeCategory, data = mergedData)); tukey_hsd(fit) %>% print(n=42)
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_overTime.pdf", device="pdf", height=7, width=7)
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"); subsetData$X1.Kd.HA <- 1 / subsetData$X1.Kd.HA
-twoSampleBar(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohort", title="HA EC50/Kd at baseline", yLabel="1 / Concentration (ug/mL)",position = 'left')
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_baseLine.pdf", device="pdf", width=4)
+twoSampleBar(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohort", title="HA EC50/Kd\nBaseline", yLabel="1 / Concentration (ug/mL)",position = 'left')
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_baseLine.pdf", device="pdf", width=4, height=8)
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")
 univScatter(data = subsetData, xData = "Cycle.of.Immunotherapy", yData = "Lo.Hi.HA.affinity", fillParam = "TimeCategory", 
@@ -1356,10 +1422,15 @@ ggplot(subsetData, aes(x=dateDiff, y=Subject)) +
 
 
 subsetData <- mergedData[which(!is.na(mergedData$irAE) & mergedData$irAE != "" ), ]
-twoSampleBar(data = subsetData, yData="FCtfh_oW", yLabel = "Fold-change at one week", title="Post-vax\nICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE") + 
+twoSampleBar(data = subsetData, yData="FCtfh_oW", yLabel = "Fold-change at one week", title="Post-vax\nICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE", nonparam = F) + 
   theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0)) +
   scale_fill_manual(values = c("grey90", "#ff9a6a")) 
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_FCtfh.pdf", width=3.5)
+
+
+subsetData %>% group_by(irAE) %>% get_summary_stats(FCtfh_oW)
+
+
 twoSampleBar(data = subsetData, yData="H1N1pdm09.HAI.titer", yLabel = "Baseline H1N1pdm09 titer", title="Baseline HAI", xData = "irAE",fillParam = "irAE")+ 
   theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0), plot.title = element_text(size=28)) + 
   scale_fill_manual(values = c("grey90", "#ff9a6a")) 
@@ -1376,9 +1447,10 @@ twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.aIgG4..ba
 twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.ICOS.", yLabel = "medianFI ICOS", title="baseline\nICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
   scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_ICOS.pdf", width=4)
-twoSampleBar(data = subsetData, yData="Ki67hiCD38hicTfh_medfi.CD71.", yLabel = "medianFI CD71 - baseline", title="ICOS+CD38+ cTfh", xData = "irAE",fillParam = "irAE")+ 
-  theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0), plot.title = element_text(size=28)) + 
-  scale_fill_manual(values = c("grey90", "#ff9a6a")) 
+twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_Ki67hi...FreqParent", yLabel = "% ICOS+CD38+ cTfh", title="baseline\nKi67", xData = "irAE",fillParam = "irAE", 
+             nonparam = T)+ scale_fill_manual(values = c("grey90", "#ff9a6a")) + theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/irAE_Ki67.pdf", width=4)
+
 twoSampleBar(data = subsetData, yData="cTfh_ICOShiCD38hi_cTfh..._medfi.PD1.", yLabel = "medianFI PD1 - baseline", title="ICOS+CD38+ cTfh", xData = "irAE", fillParam = "irAE")+ 
   theme(axis.title.x = element_text(size=28),  axis.text.x = element_text(hjust = 0.5, vjust=0.5, angle=0), plot.title = element_text(size=28)) + 
   scale_fill_manual(values = c("grey90", "#ff9a6a")) 

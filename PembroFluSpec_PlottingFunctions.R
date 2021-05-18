@@ -394,7 +394,7 @@ plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizeby
       geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorRight, size=0.01, color="black") +
       geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorLeft, size=0.01, color="black") +
       coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
-      theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
+      theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14, color="black"), title = element_text(size=18)) +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
       annotation_custom(left_grob) + annotation_custom(right_grob) 
     )}
   if(sizebyFDR == T){
@@ -402,9 +402,8 @@ plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizeby
       ggplot(data=mergeResults) + geom_point(aes(x=NAME, y=NES, size=FDR.q.val)) + 
         geom_bar( data = subset(mergeResults, `NES` > 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorRight, size=0.01, color="black") +
         geom_bar( data = subset(mergeResults, `NES` < 0), aes(x=NAME, y=NES) , stat="Identity", width=0.15, fill=colorLeft, size=0.01, color="black") +        
-        
         coord_flip() + theme_bw() + ggtitle(title) + ylab("Normalized Enrichment Score") + xlab(NULL) + 
-        theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18), legend.title = element_text(size=12)) + 
+        theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14, color="black"), title = element_text(size=18), legend.title = element_text(size=12)) + 
         scale_size( range=c(8,3),name = "False\nDiscovery\nRate") +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
         annotation_custom(left_grob) + annotation_custom(right_grob)
     )}
@@ -424,7 +423,7 @@ plotGSEAtraditional <- function (mergeResults, singlePathway, pathwayName, title
     ggplot(data=singlePathway, aes(x=RANK.IN.GENE.LIST, y=RUNNING.ES) ) + geom_line(color="black", size=1) + 
     geom_rug(sides="b", size=0.75, alpha=0.5) + theme_bw() +
     ggtitle(title) + ylab("Enrichment score") + xlab("Rank in gene list") + 
-    theme(axis.text = element_text(size=24,hjust = 0.5), axis.title = element_text(size=24,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5))+
+    theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5, color="black"), plot.title = element_text(size=32,hjust = 0.5))+
     annotation_custom(main_grob) + geom_hline(yintercept = 0) + 
       annotation_custom(left_grob) + annotation_custom(right_grob)
   )

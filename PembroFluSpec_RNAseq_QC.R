@@ -86,27 +86,27 @@ customPalette <- colorRampPalette(brewer.pal(12,"Paired"))(12)
 
 ggplot(tsneMap, aes(x=V1, y=V2)) + 
   geom_point(size=10,pch=21,colour="black", aes(fill= Subset )) +                                     # color by subset
-  xlab("") + ylab("") +   ggtitle("t-SNE - By lymphocyte subset") +  theme_light(base_size=24)  + 
+  xlab("") + ylab("") +   ggtitle("By subset") +  theme_light(base_size=24)  + 
   scale_fill_manual(values = c("#aaccbb", "yellow","blue","orange"),  limits = c("HiHi_cTfh","PB","ABC","navB"), labels = c("ICOS+CD38+ cTfh","ASC", "ABC","Naive B"))+ 
-  theme(strip.background = element_blank()) + labs(fill = "Sample cohort", legend.key = element_blank()) +
+  theme(strip.background = element_blank(), plot.title=element_text(size=40)) + labs(fill = "Treatment", legend.key = element_blank()) +
   guides(colour=guide_legend(override.aes=list(size=8))) #+ xlim(-60,60) + ylim(-55,70)
-# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorBySubset.pdf", width=10)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorBySubset.pdf", width=8)
 
 ggplot(tsneMap, aes(x=V1, y=V2)) + 
   geom_point(size=10,pch=21,colour="black", aes(fill=TimeCategory)) +                                      # color by TimeCategory
-  xlab("") + ylab("") +   ggtitle("t-SNE - By time after vaccine") +  theme_light(base_size=24)  +  
-  theme(strip.background = element_blank()) + labs(fill = "Time Category", legend.key = element_blank()) +
+  xlab("") + ylab("") +   ggtitle("By time point") +  theme_light(base_size=24)  +  
+  theme(strip.background = element_blank(), plot.title=element_text(size=40)) + labs(fill = "Time Point", legend.key = element_blank()) +
   guides(colour=guide_legend(override.aes=list(size=8))) #+ xlim(-60,60) + ylim(-55,70)
-# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorByTimeCategory.pdf", width=10)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorByTimeCategory.pdf", width=7)
 
 
 ggplot(tsneMap, aes(x=V1, y=V2)) + 
   geom_point(size=10,pch=21,colour="black", aes(fill=Cohort )) +                                      # color by Cohort
-  xlab("") + ylab("") +   ggtitle("t-SNE - By cohort") +  theme_light(base_size=24)  + 
+  xlab("") + ylab("") +   ggtitle("By treatment") +  theme_light(base_size=24)  + 
   scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) + 
-  theme(strip.background = element_blank()) + labs(fill = "Sample cohort", legend.key = element_blank()) +
+  theme(strip.background = element_blank(), plot.title=element_text(size=40)) + labs(fill = "Treatment", legend.key = element_blank()) +
   guides(colour=guide_legend(override.aes=list(size=8))) #+ xlim(-60,60) + ylim(-55,70)
-# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorByCohort.pdf", width=10)
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorByCohort.pdf", width=7)
 
 
 
