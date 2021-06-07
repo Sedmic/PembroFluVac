@@ -1,3 +1,5 @@
+#+ fig.width=8, fig.height=8
+#' ##--------- call libraries --
 library("genefilter")
 library("ggplot2")
 library("grid");  library("reshape2")

@@ -1,4 +1,4 @@
-#+ fig.width=6, fig.height=6
+#+ fig.width=8, fig.height=8
 #' ##--------- call libraries --
 library("genefilter")
 library("ggplot2")
@@ -144,6 +144,12 @@ mergedData$TimeCategory <- factor(mergedData$TimeCategory, levels = c("baseline"
 mergedData$Cohort <- factor(mergedData$Cohort, levels = c("Healthy", "aPD1","nonPD1"))
 mergedData$dummy <- "dummy"
 
+#' ## ----------- Save mergedData as RDS  --------------------
+
+# saveRDS(mergedData, file = "mergedData.RDS")
+# write.csv(mergedData, file = "mergedData.csv")
+# mergedData <- readRDS("mergedData.RDS")
+
 #' ## ----------- Dataset overview --------------------
 
 dataAvail <- mergedData[ , - grep(paste(c("TimePoint", "dummy", "Visit","Label"), collapse = "|"), colnames(mergedData))]
@@ -209,10 +215,10 @@ paste("Range Age Healthy: ", range(mergedData[which(mergedData$Cohort == "Health
 temp <- as.data.frame( cor(mergedData[ ,sapply(mergedData, is.numeric)], mergedData$Cycle.of.Immunotherapy, use="pairwise.complete.obs"))
 temp$names <- rownames(temp); rownames(temp) <- NULL; 
 temp[order(temp$V1,decreasing = T),][1:20,];   temp[order(temp$V1,decreasing = F),][1:20,]; 
-
-subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline");  
-res <- lapply(subsetData[,c(5:80,82:161,163:292,300:450)], function(x) t.test(x ~ subsetData$Cohort, var.equal = TRUE))
-res <- sapply(res, "[[", "p.value")
+# 
+# subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline");  
+# res <- lapply(subsetData[,c(5:80,82:161,163:292,300:450)], function(x) t.test(x ~ subsetData$Cohort, var.equal = TRUE))
+# res <- sapply(res, "[[", "p.value")
 
 
 
@@ -253,7 +259,7 @@ prePostTimeAveraged(melted, title = "CD19+CD86+ frequencies averaged", xLabel = 
 twoSampleBar(data=subset(subsetData, TimeCategory == "baseline"), xData="Cohort", yData="CD19hi_CD86....FreqParent", fillParam="Cohort", title="CD86 in CD19 at baseline", 
              yLabel="CD86+ (% CD19)", position="left") 
 summary(lm( data = subsetData, CD19hi_CD86....FreqParent ~ Cohort + Year + TimeCategory))
-summary(lm( data = subset(subsetData, TimeCategory == "baseline"), logCD19CD86_FreqParent ~ Cohort ))
+# summary(lm( data = subset(subsetData, TimeCategory == "baseline"), logCD19CD86_FreqParent ~ Cohort ))
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("CD19hi_IgM....FreqParent"))
@@ -922,25 +928,26 @@ seroprot$Cohort <- factor(seroprot$Cohort, levels = c("Healthy", "aPD1"))
 ggplot(data=seroprot, aes(x=Cohort, y=Seroprot, fill=Cohort,width=0.6)) + scale_fill_manual(values = c("#7FAEDB", "#FFB18C")) +  
   geom_bar( position = position_dodge(), stat = "identity", color="black",size=0.1) + ggtitle("Seroprotection") + ylab("Proportion seroprotected") +  theme_bw() +
   theme(axis.text = element_text(size=28,hjust = 0.5,color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
-  theme(legend.position = "none", axis.text.x = element_text(angle=45,hjust=1,vjust=1)) + 
+  theme(legend.position = "none", axis.text.x = element_text(angle=45,hjust=1,vjust=1)) +
   coord_cartesian(ylim = c(0,1)) + scale_y_continuous(breaks = seq(0,1,0.1))
 # ggsave (filename = "D:/Pembro-Fluvac/Analysis/Images/Seroprotection_byCohort.pdf", device="pdf", width=4)
 
-prePostTimeAveraged(melted, title = "HAI responses", xLabel = NULL, yLabel = "H1N1pdm09 HAI titer") + scale_y_continuous(trans = 'log2', breaks=c(2^(2:14)))
+prePostTimeAveraged(melted, title = "HAI responses", xLabel = NULL, yLabel = "H1N1pdm09 HAI titer") + scale_y_continuous(trans = 'log2', breaks=c(2^(1:14)), limits = c(2,1200)) +
+  geom_hline(yintercept = 40, linetype = "dashed", color="grey50") + annotate("text",x = 3, y=50, label="Seroprotection", size=7,color="grey50")
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAIresponsesTimeAveraged.pdf", device = "pdf", width=7, height=7)
 Anova(fit <- lm( value ~ Cohort * TimeCategory, data = melted)); tukey_hsd(fit)
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 prePostTime(data = subsetData, xData = "TimeCategory", yData = "H1N1pdm09.HAI.titer", fillParam = "Cohort", title = "HAI titers over time", xLabel = "TimeCategory",
-            yLabel = "HAI titer", groupby = "Subject") + scale_y_continuous(trans='log2', breaks=2^(2:13))
+            yLabel = "HAI titer", groupby = "Subject") + scale_y_continuous(trans='log2', breaks=2^(1:13))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAItiter_late_byCohort_persubject.pdf", device="pdf", width=5.5)
-
+# 
 # subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")
-twoSampleBar(data=subsetData, xData="Cohort", yData="H1N1pdm09.HAI.titer", fillParam="Cohort", batch = "Year",title="All yrs: HAI titers at d0", yLabel="H1N1pdm09 titer") + 
-  scale_y_continuous(trans='log2', breaks=c(2^(2:14) ) ) +  coord_cartesian(ylim = c(4,8192))
-subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
-twoSampleBar(data=subsetData, xData="Cohort", yData="H1N1pdm09.HAI.titer", fillParam="Cohort", batch="Year", title="Late HAI titers", yLabel="H1N1pdm09 titer") + 
-  scale_y_continuous(trans='log2' , breaks=c(2^(2:15))) + coord_cartesian(ylim = c(4,16000))
+# twoSampleBar(data=subsetData, xData="Cohort", yData="H1N1pdm09.HAI.titer", fillParam="Cohort", batch = "Year",title="All yrs: HAI titers at d0", yLabel="H1N1pdm09 titer") + 
+#   scale_y_continuous(trans='log2', breaks=c(2^(2:14) ) ) +  coord_cartesian(ylim = c(4,8192))
+# subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "late")
+# twoSampleBar(data=subsetData, xData="Cohort", yData="H1N1pdm09.HAI.titer", fillParam="Cohort", batch="Year", title="Late HAI titers", yLabel="H1N1pdm09 titer") + 
+#   scale_y_continuous(trans='log2' , breaks=c(2^(2:15))) + coord_cartesian(ylim = c(4,16000))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAItiter_late_byCohort.pdf", device="pdf", width=4.5)
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
@@ -1242,13 +1249,13 @@ univScatter(data = subset(mergedData, TimeCategory == "oneWeek" & Cohort == "aPD
             title = "FCtfh_oW vs IgG1 sialylated", yLabel= "IgG1 sialylated", xLabel = "FCtfh oW" )
 
 
-prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ABC", xLabel = "TimeCategory", 
-                yLabel = "log2 counts", paired = F)
+# prePostTimeGene(singleGeneData, xData = "TimeCategory" , yData = "value", fillParam = "Cohort", groupby = "Subject", title = "FUT8 in ABC", xLabel = "TimeCategory", 
+#                 yLabel = "log2 counts", paired = F)
 
-subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory != "late" )
-
-t_test(data = subset(subsetData, Cohort == "Healthy"), IgG1_Total.sialylated~ TimeCategory, paired=T)
-t_test(data = subset(subsetData, Cohort == "aPD1"), IgG1_Total.sialylated ~ TimeCategory, paired=T)
+# subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory != "late" )
+# 
+# t_test(data = subset(subsetData, Cohort == "Healthy"), IgG1_Total.sialylated~ TimeCategory, paired=T)
+# t_test(data = subset(subsetData, Cohort == "aPD1"), IgG1_Total.sialylated ~ TimeCategory, paired=T)
 
 univScatter(data = subset(mergedData, TimeCategory == "baseline"), yData = "IgG1_Total.sialylated", xData = "Cycle.of.Immunotherapy", fillParam = "dummy", 
             title = "Cycle of IT vs IgG1 sialylated", yLabel= "IgG1 sialylated", xLabel = "Cycle of immunotherapy" )
@@ -1307,12 +1314,14 @@ ggplot(data=data, aes_string(x=xData, y=yData, fill=fillParam, width=0.6)) + sca
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("X1.Kd.HA")); melted$value <- 1/melted$value
-prePostTimeAveraged(melted, title = "HA EC50/Kd", xLabel = NULL, yLabel = "1 / Concentration (ug/mL)") + scale_y_continuous(breaks=seq(0,99,0.25))
+prePostTimeAveraged(melted, title = "HA EC50/Kd", xLabel = NULL, yLabel = "1 / Concentration (ug/mL)") + scale_y_continuous(breaks=seq(0,99,0.25), limits = c(0.5,3.5))
+# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_overTime.pdf", device="pdf", height=7, width=7)
 summary(fit <- lm( data = mergedData, X1.Kd.HA ~ Cohort  + TimeCategory))
 summary(fit <- aov(formula = X1.Kd.HA ~ Cohort  + TimeCategory + Cohort:TimeCategory, data = mergedData)); tukey_hsd(fit) %>% print(n=42)
-# ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_overTime.pdf", device="pdf", height=7, width=7)
+
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline"); subsetData$X1.Kd.HA <- 1 / subsetData$X1.Kd.HA
-twoSampleBar(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohort", title="HA EC50/Kd\nBaseline", yLabel="1 / Concentration (ug/mL)",position = 'left')
+twoSampleBar(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohort", title="HA EC50/Kd\nBaseline", yLabel="1 / Concentration (ug/mL)",position = 'left') + 
+  scale_y_continuous(breaks = seq(0,100,1))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/AntibodyAffinity_baseLine.pdf", device="pdf", width=4, height=8)
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline")

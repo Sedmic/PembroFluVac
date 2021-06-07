@@ -1,3 +1,5 @@
+#+ fig.width=8, fig.height=8
+#' ##--------- call libraries --
 library("gplots")
 library("ggplot2")
 library("ggrepel")
@@ -5,7 +7,7 @@ library("DESeq2")
 library("viridis")
 library("Rtsne")
 sessionInfo()
-source('D:/Pembro-Fluvac/Analysis/Ranalysis_files/PembroFluSpec_PlottingFunctions.R')
+source('D:/Pembro-Fluvac/Analysis/Ranalysis/PembroFluSpec_PlottingFunctions.R')
 
 
 dataMatrix <- read.table("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/PORTresults/NORMALIZED_DATA/SPREADSHEETS/FINAL_master_list_of_gene_counts_MIN.Fastqs.txt", sep="", 
@@ -66,8 +68,8 @@ metaData$condition <- paste0( metaData$Cohort,"_",metaData$Subset,"_",metaData$T
 
 fullDataset <- DESeqDataSetFromMatrix(countData=dataMatrix, colData=metaData, design= ~ condition)
 
-# vsd <- varianceStabilizingTransformation(fullDataset)
-# logDataMatrix <- as.data.frame(assay(vsd))
+vsd <- varianceStabilizingTransformation(fullDataset)
+logDataMatrix <- as.data.frame(assay(vsd))
 
 # write.csv(logDataMatrix, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/logDataMatrix.csv")
 # logDataMatrix <- read.csv( file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/logDataMatrix.csv", stringsAsFactors = F, header = 1)
