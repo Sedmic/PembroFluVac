@@ -35,55 +35,67 @@ for (j in 1:length(files))
 }
 
 # mergeData <- mergeDataYr1
-cleanColumnNames <- function (mergeData)
+cleanColumnNames <- function (df)
 {
-  mergeData <- mergeData[-grep(pattern="Mean", rownames(mergeData)),]
-  mergeData <- mergeData[-grep(pattern="SD", rownames(mergeData)),]
-  mergeData <- mergeData[,-which(colnames(mergeData) == "X.1")]
+  df <- df[-grep(pattern="Mean", rownames(df)),]
+  df <- df[-grep(pattern="SD", rownames(df)),]
+  df <- df[,-which(colnames(df) == "X.1")]
   
-  temp <- rownames(mergeData); temp <- str_replace(temp, "PBMCs_", ""); temp <- str_replace(temp, "PBMC_", ""); 
+  temp <- rownames(df); temp <- str_replace(temp, "PBMCs_", ""); temp <- str_replace(temp, "PBMC_", ""); 
   temp <- str_replace(temp, "day", "d"); temp <- substr(temp, 1, nchar(temp)-8)   # clean up rownames a bit, lop off the last 8 characters _0xx.fcs
-  rownames(mergeData) <- temp
+  rownames(df) <- temp
   # add columns for Cohort, Subject, TimePoint (numeric), TimeCategory (categorical), and Year
-  mergeData$Label <- rownames(mergeData)
-  mergeData$Subject <- word(mergeData$Label,1,sep = "\\_")  # take first chunk prior to _ character
-  mergeData$Cohort <- 0;  
-  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "19")] <- "aPD1";  
-  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "FS")] <- "Healthy"; 
-  mergeData$Cohort[which(substr(mergeData$Label, 1, 2) == "20")] <- "nonPD1"
-  mergeData$TimePoint <- as.numeric(word(mergeData$Label, 2, sep= "d"))  # parse out the number of days since vaccination
-  mergeData$TimeCategory <- 0;  
-  mergeData$TimeCategory[which(mergeData$TimePoint == 0)] <- "baseline"  
-  mergeData$TimeCategory[which(mergeData$TimePoint > 0 & mergeData$TimePoint <= 14)] <- "oneWeek"; 
-  mergeData$TimeCategory[which(mergeData$TimePoint > 14)] <- "late"
+  df$Label <- rownames(df)
+  df$Subject <- word(df$Label,1,sep = "\\_")  # take first chunk prior to _ character
+  df$Cohort <- 0;  
+  df$Cohort[which(substr(df$Label, 1, 2) == "19")] <- "aPD1";  
+  df$Cohort[which(substr(df$Label, 1, 2) == "FS")] <- "Healthy"; 
+  df$Cohort[which(substr(df$Label, 1, 2) == "20")] <- "nonPD1"
+  df$TimePoint <- as.numeric(word(df$Label, 2, sep= "d"))  # parse out the number of days since vaccination
+  df$TimeCategory <- 0;  
+  df$TimeCategory[which(df$TimePoint == 0)] <- "baseline"  
+  df$TimeCategory[which(df$TimePoint > 0 & df$TimePoint <= 14)] <- "oneWeek"; 
+  df$TimeCategory[which(df$TimePoint > 14)] <- "late"
 
-  temp <- colnames(mergeData)
+  temp <- colnames(df)
   temp <- str_replace(temp,"Freq..of.Parent....", "FreqParent")
   temp <- str_replace(temp,"Time.Lymphocytes.Singlets.Live.CD3..CD4..Nonnaive.CXCR5..", "cTfh_")
   temp <- str_replace(temp,"Time.Lymphocytes.Singlets.Live.CD19..", "CD19_")
   temp <- str_replace(temp,"Time.Lymphocytes.Singlets.Live.", "Live_")
-  temp[grep(pattern = "FreqParent.1", temp)] <- str_replace( temp[grep(pattern = "FreqParent.1", temp)],"cTfh_ICOS.CD38..","cTfh_ICOSloCD38lo_") 
-  temp <- str_replace( temp,"cTfh_ICOSloCD38lo.","cTfh_ICOSloCD38lo_") 
-  temp <- str_replace(temp,"cTfh_ICOS.CD38..","cTfh_ICOShiCD38hi_")
+  # temp[grep(pattern = "FreqParent.1", temp)] <- str_replace( temp[grep(pattern = "FreqParent.1", temp)],"cTfh_ICOS.CD38..","cTfh_ICOSloCD38lo_") 
+  # temp <- str_replace( temp,"cTfh_ICOSloCD38lo.","cTfh_ICOSloCD38lo_") 
+  # temp <- str_replace(temp,"cTfh_ICOS.CD38..","cTfh_ICOShiCD38hi_")
   temp[grep(pattern = "Live_CD3..CD4....FreqParent.1", temp)] <- str_replace( temp[grep(pattern = "Live_CD3..CD4....FreqParent.1", temp)], "Live_CD3..CD4.", "Live_CD3hi_CD4lo_" )
-  temp <- str_replace(temp,"FreqParent.1","FreqParent")
+  temp <- str_replace(temp, paste0( "FreqParent.", seq(1:5), collapse="|"),"FreqParent")
   temp <- str_replace(temp,"cTfh\\.","")
-  colnames(mergeData) <- temp
-  return(mergeData)  
+  colnames(df) <- temp
+  return(df)  
 }
 
 Yr3data <- cleanColumnNames(mergeDataYr3);  Yr3data$Year <- 3
 Yr2data <- cleanColumnNames(mergeDataYr2);  Yr2data$Year <- 2
 Yr1data <- cleanColumnNames(mergeDataYr1);  Yr1data$Year <- 1
 
-combinedYrs <- merge(x=Yr3data, y=Yr2data, all=T)
-# colnames(combinedYrs)[which(! (colnames(combinedYrs) %in% colnames(Yr1data)))]
+names(Yr3data)[22:40] <- str_replace( names(Yr3data)[22:40],"cTfh_ICOS.CD38..","cTfh_ICOShiCD38hi_") 
+names(Yr3data)[41:59] <- str_replace( names(Yr3data)[41:59],"cTfh_ICOS.CD38..","cTfh_ICOSloCD38lo_") 
+names(Yr3data)[c(38,57)] <- str_replace(names(Yr3data)[c(38,57)], "CXCR3.CCR6.", "CXCR3lo_CCR6lo")
+names(Yr3data)[c(39,58)] <- str_replace(names(Yr3data)[c(39,58)], "CXCR3.CCR6.", "CXCR3lo_CCR6hi")
+names(Yr3data)[c(40,59)] <- str_replace(names(Yr3data)[c(40,59)], "CXCR3.CCR6.", "CXCR3hi_CCR6lo")
 
+names(Yr2data)[22:37] <- str_replace( names(Yr2data)[22:37],"cTfh_ICOS.CD38..","cTfh_ICOShiCD38hi_") 
+names(Yr2data)[38:53] <- str_replace( names(Yr2data)[38:53],"cTfh_ICOS.CD38..","cTfh_ICOSloCD38lo_") 
+
+names(Yr1data)[19:30] <- str_replace( names(Yr1data)[19:30],"cTfh_ICOS.CD38..","cTfh_ICOShiCD38hi_") 
+# names(Yr1data)[41:59] <- str_replace( names(Yr1data)[41:59],"cTfh_ICOS.CD38..","cTfh_ICOSloCD38lo_") 
+
+
+combinedYrs <- merge(x=Yr3data, y=Yr2data, all=T)
 combinedYrs <-  merge(x=combinedYrs, y=Yr1data, all=T)
 rownames(combinedYrs) <- combinedYrs$Label
 
+
 # write.csv(Yr3data, file = "../mergeData_freqParent.csv")   # year 3 only
-# write.csv(combinedYrs, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_freqParent_allyrs.csv")  # all years combined
+write.csv(combinedYrs, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergeData_Tflow_freqParent_allyrs.csv")  # all years combined
 rm(mergeDataYr3); rm(mergeDataYr2); rm(mergeDataYr1); rm(combinedYrs)
 
 
@@ -442,9 +454,25 @@ rm(week1,week2,week3,week4,week5,week6,week7,week8,week9,week10)
 
 
 
+seroTemp <- read.csv(file= "D:/Pembro-Fluvac/Analysis/mergedData/20200711 SerologyMeasurements.csv", stringsAsFactors = F, header = T)
+seroRock <- read.csv(file="D:/Pembro-Fluvac/Analysis/mergedData/20201217 Rockefeller_Serology.csv")
+seroUpdate <- read.csv(file = "D:/Pembro-Fluvac/Analysis/Rockefeller/122721 Flu PD-1 Combined seasons.csv"); seroUpdate <- seroUpdate[,1:10]
+names(seroUpdate)[1] <- "Subject";
 
+seroMerge <- merge(x=seroTemp, y=seroUpdate, by = c("Subject","Updated.RU.identifier"), all.x = T)
+plot(x=seroMerge$Plasma.CXCL13..pg.mL.,y=seroMerge$CXCL13.combined.repeat.2020)
+# cor(x=seroMerge$Plasma.CXCL13..pg.mL.,y=seroMerge$CXCL13.combined.repeat.2020, use="complete.obs")
+# 
+# write.csv(seroMerge[, -which(names(seroMerge) %in% c("Day","Treatment","CXCL13.combined.repeat.2020","HAI.titer..H1N1pdm09."))],
+          # file = "D:/Pembro-Fluvac/Analysis/mergedData/SerologyMeasurements.csv")
 
+names(seroUpdate)[1] <- "Label";
+seroMerge <- merge(x=seroRock, y=seroUpdate, by = c("Label","Updated.RU.identifier"), all.x = T)
+plot(x=seroMerge$Plasma.CXCL13..pg.mL.,y=seroMerge$CXCL13.combined.repeat.2020)
+# cor(x=seroMerge$Plasma.CXCL13..pg.mL.,y=seroMerge$CXCL13.combined.repeat.2020, use="complete.obs")
+#
+# write.csv(seroMerge[, -which(names(seroMerge) %in% c("Day","Treatment","CXCL13.combined.repeat.2020","HAI.titer..H1N1pdm09."))], 
+#           file = "D:/Pembro-Fluvac/Analysis/mergedData/Rockefeller_Serology.csv")
 
-
-
+rm(seroTemp, seroUpdate, seroMerge, seroRock)
 
