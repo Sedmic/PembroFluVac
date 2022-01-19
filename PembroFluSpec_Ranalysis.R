@@ -369,12 +369,6 @@ prePostTimeAveraged(data = melted.paired, title = "cTfh", xLabel = NULL, yLabel 
 # write.csv(melted.paired, file = "cTfh_responses_freqCD4.csv")
 
 
-
-
-
-
-
-
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
 melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("CD19hi_..FreqParent"))
 prePostTimeAveraged(melted, title = "CD19+ frequencies averaged", xLabel = NULL, yLabel = "CD19+ (freq of CD14-CD4- live)") #+ scale_y_continuous(breaks=seq(0,99,0.25))
@@ -447,6 +441,9 @@ prePostTimeAveraged(melted, title = "+/+ CTLA4hi frequencies averaged", xLabel =
 summary(lm( data = subsetData, cTfh_ICOShiCD38hi_CTLA4hi...FreqParent ~ Cohort + Year + TimeCategory))
 
 
+
+
+## ******************** Ki67 analyses ***********************************
 subsetData <- subset(mergedData, Cohort != "nonPD1")
 melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), measure.vars = c("cTfh_ICOShiCD38hi_Ki67hi...FreqParent"))
 prePostTimeAveraged(melted, title = "+/+ Ki67hi frequencies averaged", xLabel = NULL, yLabel = "Ki67hi (% cTfh)") 
@@ -463,11 +460,25 @@ melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort'), mea
 prePostTimeAveraged(melted, title = "+/+ Ki67hi frequencies averaged", xLabel = NULL, yLabel = "+/+ Ki67hi (freq CD4)") 
 summary(lm( data = subsetData, cTfh_ICOShiCD38hi_Ki67hi...FreqParent ~ Cohort  + TimeCategory + Year))    # Year is a batch effect
 tukey_hsd(aov(data = subsetData, formula = cTfh_ICOShiCD38hi_Ki67hi...FreqParent ~ Cohort:TimeCategory))  # proportion of CD4 not FreqParent
+subsetData <- subset(subsetData, Cohort != "nonPD1" & TimeCategory == "oneWeek")
+twoSampleBar(data=subsetData, xData="Cohort", yData="cTfh_ICOShiCD38hi_Ki67hi...FreqParent", fillParam="Cohort", title="Ki67 in ICOS+CD38+ cTfh at oW", 
+             yLabel="+/+ Ki67hi (% cTfh) ") 
+
+
+univScatter(data = subsetData, xData = "FCtfh_oW", yData = "cTfh_ICOShiCD38hi_Ki67hi...FreqParent", fillParam = "dummy",title = "", xLabel = "", yLabel = "", nonparam = T)
+bivScatter(data1 = subset(subsetData, Cohort == "Healthy"), data2 = subset(subsetData, Cohort == "aPD1"), name1 = "Healthy", name2 = "aPD1",
+           xData = "FCtfh_oW", yData = "cTfh_ICOShiCD38hi_Ki67hi...FreqParent", fillParam = "Cohort",title = "Ki67 vs Fold-change", 
+           xLabel = expression(paste("Fold-change in ICO", S^'+', "CD3", 8^'+'," cTfh")), yLabel = expression(paste("Ki6",7^'+'," (% ICO", S^'+', "CD3", 8^'+', " cTfh)")),
+           nonparam = T) + scale_y_continuous(limits=c(0,3.5))
+  # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/Ki67-vs-cTfhFoldChange_biv.pdf")
+
+
+
 
 subsetData$cTfh_ICOShiCD38hi_Ki67hi...FreqParent <- subsetData$cTfh_ICOShiCD38hi_Ki67hi...FreqParent * subsetData$cTfh_ICOShiCD38hi_..FreqParent * 
   subsetData$cTfh_..FreqParent * subsetData$Live_CD3..CD4..Nonnaive...FreqParent /1000000
 twoSampleBar(data=subsetData, xData="Cohort", yData="cTfh_ICOShiCD38hi_Ki67hi...FreqParent", fillParam="Cohort", title="Ki67 in ICOS+CD38+ cTfh at oW", 
-             yLabel="+/+ Ki67hi (freq CD4) ")   # this is really just reflective of the +/+ frequency difference between cohorts
+             yLabel="+/+ Ki67hi (freq CD4)", nonparam=F)   # this is really just reflective of the +/+ frequency difference between cohorts
 twoSampleBar(data=subsetData, xData="Cohort", yData="cTfh_ICOShiCD38hi_cTfh..._medfi.Ki67.", fillParam="Cohort", title="Ki67 in ICOS+CD38+ cTfh at oW", 
              yLabel="+/+ for medianFI of Ki67")  
 

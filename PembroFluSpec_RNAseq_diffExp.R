@@ -176,7 +176,7 @@ probeGenes <- logDataMatrix[ c("PD1LG1","PD1LG2") , grep("PB",colnames(logDataMa
 # prePostTimeAveragedGene(singleGeneData, title = "PD1LG1 in ASC", xLabel = "TimeCategory", yLabel = "log2 counts")
 
 
-## ******** Differential expression by subgroup and age category *********************
+## ------------- Differential expression by subgroup and age category ----------
 
 library("BiocParallel")
 register(SnowParam(10))
@@ -237,7 +237,7 @@ navB_HC_bL_v_oW <- navB_HC_bL_v_oW[idx,]   # keep hard filter from above for con
 DESdata_navB_H_bLvoW <- DESeq(navB_HC_bL_v_oW, parallel=TRUE)
 
 navB_H_bL_v_oW <- as.data.frame(results(DESdata_navB_H_bLvoW, contrast = c("condition", "Healthy_navB_oneWeek", "Healthy_navB_baseline") ))  # pos stats = first elem in comparison
-# write.csv(navB_H_bL_v_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/HiHi_AvH_oW.csv")
+# write.csv(navB_H_bL_v_oW, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/navB_H_bL-vs-oW.csv")
 volcanoPlot(navB_H_bL_v_oW, repelThresh = 0.05, title = "NavB in Healthy at bL vs oW", leftLabel = "Baseline", rightLabel = "oneWeek" )
 
 probeGenes <- logDataMatrix[ grep(paste(c("KIAA1683", "GPER1","NR4A3","PMEPA1","CD83","^ID1$","^FOS$","^JUN$","SIGLEC1$","^IER2$",
@@ -358,16 +358,17 @@ probeGenes <- logDataMatrix[diffExpGenes, grep("HiHi_oW",colnames(logDataMatrix)
 # dev.off()
 # 
 
-displayGenes <- c("MKI67","HELLS","ESPL1","ARID1A","TNFRSF1B","DDX11", "CCDC84", "ARID1A", "DDX10", "ST6GAL1", "IFI44", "OASL", "IKZF1", "PTGES3","IFI44L", "DDX60"); 
+displayGenes <- c("MKI67","HELLS","ESPL1","ARID1A","TNFRSF1B","DDX11", "CCDC84", "ARID1A", "DDX10", "ST6GAL1", "IFI44", "OASL", "IKZF1", 
+                  "PTGES3","IFI44L", "DDX60","FOXO1"); 
 labels <- rownames(probeGenes); labels[!labels %in% displayGenes] <- "" 
 newnames <- lapply(labels, function(x) bquote(italic(.(x))))
-
+annotation <- metaData[ , -grep(paste(c("condition","Subject"),collapse="|"),colnames(metaData),value=F)]; 
 ann_colors = list(  Cohort = c("Healthy" ="#7FAEDB", "aPD1" = "#FFB18C"), Time = c("baseline"="grey90","oneWeek"="grey40")  ) 
 annotation$Subset <- NULL;  names(annotation)[1] <- "Time"
 pheatmap(probeGenes, scale="row", cluster_col=T, cluster_row=T, annotation_col = annotation, annotation_colors= ann_colors, show_colnames = F, 
          labels_row = as.expression(newnames),
          fontsize_row = 13, color=inferno(100), main = "ICOS+CD38+ cTfh at one week", border_color = NA, 
-        # , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_oW_heatmap_SelectLabels.pdf", device="pdf"         # ******  further modified in Illustrator  
+        # , filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/cTfh_HvA_oW_heatmap_SelectLabels.pdf", device="pdf"         # ******  further modified in Illustrator
 )
 dev.off()
 
@@ -565,11 +566,7 @@ volcanoPlot(navB_AvH_bL, repelThresh = 0.05, title = "naiveB at oneWeek in aPD1 
 
 
 
-#' ----------- ----------- 
-
-#'                                 Gene Ontology 
-
-#' ----------- ----------- 
+# ------------- Gene Ontology ----------------
 
 ##' cTfh responses
 GO.aPD1 <- read.csv(file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GeneOntology/HiHi_AvH_oW_enrichApd1/HiHi_AvH_oW_enrichApd1_GeneOntologies.csv")
@@ -642,11 +639,7 @@ ggplot(data=mergeResults) + geom_point(aes(x=Description, y=LogP), size=7) +
 
 
 
-#' ----------- ----------- 
-
-#'                                 PATHWAY analysis 
-
-#' ----------- ----------- 
+# ----------- PATHWAY analysis ----------- 
 
 
 workingDir <- getwd()
@@ -808,13 +801,7 @@ setwd(workingDir)
 
 
 
-# ----------- ----------- 
-
-#                             INGENUITY PATHWAY analysis 
-
-# ----------- ----------- 
-
-
+# -----------  INGENUITY PATHWAY analysis ----------- 
 
 # workingDir <- getwd()
 # setwd(dir = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/IPA/")
@@ -833,11 +820,7 @@ plotIPAlollipop( upstreamIPA_filter, title = "Ingenuity UpstreamPred: HiHi AvH o
 
 setwd(workingDir)
 
-# ----------- ----------- 
-
-#' ## -                           GSVA analysis 
-
-# ----------- ----------- 
+# -----------  GSVA analysis ----------- 
 
 gsets <- getGmt("D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/GSEA/h.all.v7.0.symbols.gmt")
 HiHiv2 <- as.matrix( logDataMatrix[,grep("HiHi_oW",colnames(logDataMatrix))] )
@@ -850,22 +833,35 @@ temp$Subject <- str_replace(temp$Subject, "[.]","-")
 
 # mergedData <- loadData()    # see top of page for the function
 pheno_GSVAHiHi <- left_join(x = mergedData, y = temp, by = c("Cohort","Subject","TimeCategory"))
-univScatter(data=subset(pheno_GSVAHiHi, TimeCategory == "oneWeek"), xData = "HALLMARK_IL2_STAT5_SIGNALING", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-            fillParam = "TimeCategory", title = "cTfh at one Week", xLabel= "GSVA score - IL2-STAT5", yLabel = "ICOS+CD38+ cTfh frequency") + 
-  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+univScatter(data=subset(pheno_GSVAHiHi, TimeCategory == "oneWeek"), yData = "HALLMARK_IL2_STAT5_SIGNALING", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+            fillParam = "TimeCategory", title = "IL-2 signaling", yLabel= "GSVA score - IL2-STAT5", 
+            xLabel = expression(paste("ICO",S^'+', "CD3", 8^"+"," (% cTfh) at one week"))) + 
+  coord_cartesian(xlim = c(0,12), ylim=c(-0.6,0.75)) + scale_x_continuous(breaks = c(seq(0,18,2)))
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_IL2STAT5_vs_cTfh_oW_univ.pdf", device="pdf", height=8, width=8)
 subsetData1 <- subset(pheno_GSVAHiHi, Cohort == "Healthy")    ; subsetData2 <- subset(pheno_GSVAHiHi, Cohort == "aPD1")   
-bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "HALLMARK_IL2_STAT5_SIGNALING", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-           fillParam = "Cohort", title = "cTfh at oneWeek", xLabel= "GSVA score - IL2-STAT5", yLabel = "ICOS+CD38+ cTfh frequency") + 
-  coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "HALLMARK_IL2_STAT5_SIGNALING", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "IL-2 signaling", yLabel= "GSVA score - IL2-STAT5", 
+           xLabel = expression(paste("ICO",S^'+', "CD3", 8^"+"," (% cTfh) at one week"))) + 
+  coord_cartesian(xlim = c(0,12), ylim=c(-0.6,0.75)) + scale_x_continuous(breaks = c(seq(0,18,2)))
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_IL2STAT5_vs_cTfh_oW_biv.pdf", device="pdf", height=8, width=8)
 
-univScatter(data=subset(pheno_GSVAHiHi, TimeCategory == "oneWeek"), xData = "HALLMARK_MITOTIC_SPINDLE", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-            fillParam = "TimeCategory", title = "+/+ cTfh vs GSVA Mitotic Spindle at oneWeek", xLabel= "GSVA score - Mitotic Spindle", yLabel = "ICOS+CD38+ cTfh frequency") + 
+univScatter(data=subset(pheno_GSVAHiHi, TimeCategory == "oneWeek"), yData = "HALLMARK_MITOTIC_SPINDLE", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+            fillParam = "TimeCategory", title = "Mitotic Spindle", yLabel= "GSVA score - Mitotic Spindle", 
+            xLabel = expression(paste("ICO",S^'+', "CD3", 8^"+"," (% cTfh) at one week"))) + 
+  coord_cartesian(xlim=c(0,12),ylim = c(-1,1)) + scale_x_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_MitoticSpindle_vs_cTfh_oW_univ.pdf", device="pdf", height=8, width=8)
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", yData = "HALLMARK_MITOTIC_SPINDLE", xData="cTfh_ICOShiCD38hi_..FreqParent", 
+           fillParam = "Cohort", title = "Mitotic Spindle", yLabel= "GSVA score - Mitotic spindle", 
+           xLabel = expression(paste("ICO",S^'+', "CD3", 8^"+"," (% cTfh) at one week"))) + 
+  coord_cartesian(xlim=c(0,12),ylim = c(-1,1)) + scale_x_continuous(breaks = c(seq(0,18,2)))
+# ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_MitoticSpindle_vs_cTfh_oW_biv.pdf", device="pdf", height=8, width=8)
+
+univScatter(data=subset(pheno_GSVAHiHi, TimeCategory == "oneWeek"), xData = "HALLMARK_MITOTIC_SPINDLE", yData="FCtfh_oW", 
+            fillParam = "TimeCategory", title = "Mitotic Spindle", xLabel= "GSVA score - Mitotic Spindle", yLabel = expression(paste("ICO",S^'+', "CD3", 8^"+"," (% cTfh) at one week"))) + 
   coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_MitoticSpindle_vs_cTfh_oW_univ.pdf", device="pdf", height=8, width=8)
-bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "HALLMARK_MITOTIC_SPINDLE", yData="cTfh_ICOShiCD38hi_..FreqParent", 
-           fillParam = "Cohort", title = "+/+ cTfh vs GSVA Mitotic Spindle at oneWeek", xLabel= "GSVA score - Mitotic spindle", yLabel = "ICOS+CD38+ cTfh frequency") + 
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "HALLMARK_MITOTIC_SPINDLE", yData="FCtfh_oW", 
+           fillParam = "Cohort", title = "Mitotic Spindle", xLabel= "GSVA score - Mitotic spindle", yLabel = expression(paste("ICO",S^'+', "CD3", 8^"+"," (% cTfh) at one week"))) + 
   coord_cartesian(ylim = c(0,18)) + scale_y_continuous(breaks = c(seq(0,18,2)))
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/GSVA_MitoticSpindle_vs_cTfh_oW_biv.pdf", device="pdf", height=8, width=8)
 
@@ -949,11 +945,7 @@ temp$Subject <- str_replace(temp$Subject, "[.]","-")
 pheno_GSVAPB <- left_join(x = mergedData, y = temp, by = c("Cohort","Subject","TimeCategory"))
 
 
-# ----------- ----------- 
-
-#' ## -                           link RNAseq to phenotypic analysis 
-
-# ----------- ----------- 
+# -----------  link RNAseq to phenotypic analysis  ----------- 
 
 temp <- colnames(logDataMatrix)
 temp <- str_replace(temp, "^X",""); temp <- str_replace(temp, "[.]","-"); temp <- str_replace(temp, "_S..",""); temp <- str_replace(temp, "_S.","")
@@ -968,46 +960,21 @@ phenoRNAHiHi$Cohort <- factor(phenoRNAHiHi$Cohort, levels = c("aPD1","Healthy"))
 phenoRNAASC <- right_join(x = mergedData, y = temp2[which(temp2$Subset == "PB"),], by = c("Subject","TimeCategory"), all.x = T )
 
 
-univScatter(data=phenoRNAHiHi, xData = "IFNG", yData="FChai_late", fillParam = "dummy", title = "IFNg in +/+", xLabel= "log IFNg transcripts", yLabel = "FChai_late") 
-# temp <- subset(phenoRNAHiHi, Cohort == "aPD1")
-# cor_aPD1 <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$FChai_late, use="pairwise.complete.obs", method = "kendall",  )
-# cor_aPD1 <- as.data.frame(cbind(rownames(cor_aPD1), cor_aPD1));  cor_aPD1$V2 <- as.numeric(cor_aPD1$V2)
-# head(cor_aPD1[order(cor_aPD1$V2, decreasing=T),], n=10)
-# # univScatter(data=subset(phenoRNAHiHi, Cohort == 'aPD1'), xData = "TOR1B", yData="FChai_late", fillParam = "dummy", title = "TOR1B in +/+", xLabel= "log TOR1B transcripts", yLabel = "FChai_late") 
-# 
-# # temp <- subset(phenoRNAHiHi, Cohort == "Healthy")
-# # cor_HC <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$FChai_late, use="pairwise.complete.obs", method = "kendall")
-# # cor_HC <- as.data.frame(cbind(rownames(cor_HC), cor_HC));  cor_HC$V2 <- as.numeric(cor_HC$V2)
-# 
-# 
-# temp <- subset(phenoRNAASC, Cohort == "aPD1")
-# cor_aPD1 <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$IgG1sial_oW, use="pairwise.complete.obs", method = "kendall" )
-# cor_aPD1 <- as.data.frame(cbind(rownames(cor_aPD1), cor_aPD1));  cor_aPD1$V2 <- as.numeric(cor_aPD1$V2)
-# head(cor_aPD1[order(cor_aPD1$V2, decreasing=T),], n=10)
-# univScatter(data=subset(phenoRNAASC, Cohort == 'aPD1'), xData = "OAZ1", yData="IgG1sial_oW", 
-#             fillParam = "dummy", title = "OAZ1 in ASC", xLabel= "log OAZ1 transcripts", yLabel = "IgG1sial_oW") 
-# 
-# temp <- subset(phenoRNAASC, Cohort == "Healthy")
-# cor_HC <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$IgG1sial_oW, use="pairwise.complete.obs", method = "kendall")
-# cor_HC <- as.data.frame(cbind(rownames(cor_HC), cor_HC));  cor_HC$V2 <- as.numeric(cor_HC$V2)
-# 
+univScatter(data=phenoRNAHiHi, xData = "IFNG", yData="FCH1N1_hai_late", fillParam = "dummy", title = "IFNg in +/+", xLabel= "log IFNg transcripts", yLabel = "FChai_late") 
 
-subsetData1 <- subset(phenoRNAASC, Cohort == "Healthy" & TimeCategory == "oneWeek"); subsetData2 <- subset(phenoRNAASC, Cohort == "aPD1" & TimeCategory == "oneWeek")
-bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "JCHAIN", yData="IgG1sial_oW", 
-           fillParam = "Cohort", title = "IgGsial vs JCHAIN at oneWeek", xLabel= "JCHAIN", yLabel = "Fold-change IgG1 sial", statsOff = T) 
-
-subsetData1 <- subset(phenoRNAASC, Cohort == "Healthy" ); subsetData2 <- subset(phenoRNAASC, Cohort == "aPD1" )
-bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "GLB1", yData="IgG1sial_oW", 
-           fillParam = "Cohort", title = "IgGsial vs GLB1 at oneWeek", xLabel= "GLB1", yLabel = "Fold-change IgG1 sial") 
+temp <- subset(phenoRNAHiHi, Cohort == "aPD1")
+cor_aPD1 <- cor(temp[,grep("TRUE",sapply(temp, is.numeric), value=F)], y=temp$FCtfh_oW, use="pairwise.complete.obs", method = "kendall" )
+cor_aPD1 <- as.data.frame(cbind(rownames(cor_aPD1), cor_aPD1));  cor_aPD1$V2 <- as.numeric(cor_aPD1$V2)
+head(cor_aPD1[order(cor_aPD1$V2, decreasing=T),], n=10)
 
 
+univScatter(data=phenoRNAHiHi, xData = "FCtfh_oW", yData="BIRC5", fillParam = "dummy", title = "IFNg in +/+", xLabel= "log IFNg transcripts", yLabel = "FChai_late") 
+subsetData1 <- subset(phenoRNAHiHi, Cohort == "Healthy" & TimeCategory == "oneWeek"); subsetData2 <- subset(phenoRNAHiHi, Cohort == "aPD1" & TimeCategory == "oneWeek")   
+bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "aPD1", xData = "FCtfh_oW", yData="MKI67", 
+           fillParam = "Cohort", title = "MKI67", xLabel= "Fold-change in ICOS+CD38+ cTfh", yLabel = "MKI67") 
 
-# ----------- ----------- 
 
-#' ## -                           irAE analysis 
-
-# ----------- ----------- 
-
+# ----------- irAE analysis ----------- 
 
 
 irAEonly <- subset(phenoRNAHiHi, !is.na(phenoRNAHiHi$irAE) & phenoRNAHiHi$irAE != "")
