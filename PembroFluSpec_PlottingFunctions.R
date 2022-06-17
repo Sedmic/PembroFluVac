@@ -37,7 +37,7 @@ twoSampleBox <- function (data, xData, yData, fillParam, title, yLabel, position
       geom_boxplot(outlier.shape = NA) + geom_jitter(size=7, pch=21, width=0.05, fill="black", color="white", stroke=1) + theme_bw() + 
       ggtitle(title) + ylab(yLabel) +  
       theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
-      annotation_custom(my_grob) + theme(legend.position = "none")     )
+      annotation_custom(my_grob) + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())   )
 }
 
 twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
@@ -75,7 +75,7 @@ twoSampleBarMelted <- function (data, xData, yData, fillParam, title, yLabel)
       geom_point(size=7, pch=21, fill="black", color="white", alpha=0.5, position = position_jitter(width=0.1)) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() +
       theme(axis.text = element_text(size=28,hjust = 0.5), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), plot.title = element_text(size=32,hjust = 0.5)) + 
-      annotation_custom(my_grob) + theme(legend.position = "none")
+      annotation_custom(my_grob) + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
   )
 }
 
@@ -150,7 +150,7 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
       ggtitle(title) + ylab(yLabel) +  theme_bw() +
       theme(axis.text = element_text(size=28,color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
             plot.title = element_text(size=28,hjust = 0.5), axis.text.x = element_text(hjust = 1, vjust=1, angle=45)) + 
-      annotation_custom(my_grob) + theme(legend.position = "none")
+      annotation_custom(my_grob) + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
   )
   if (FCplot == F)
     return (
@@ -161,7 +161,7 @@ twoSampleBar <- function (data, xData, yData, fillParam, title, yLabel, batch="n
         ggtitle(title) + ylab(yLabel) +  theme_bw() +
         theme(axis.text = element_text(size=28,color="black"), axis.title = element_text(size=28,hjust = 0.5), axis.title.x = element_blank(), 
               plot.title = element_text(size=28,hjust = 0.5), axis.text.x = element_text(hjust = 1, vjust=1, angle=45)) + 
-        annotation_custom(my_grob) + theme(legend.position = "none")
+        annotation_custom(my_grob) + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
     )
 }
 
@@ -181,7 +181,8 @@ twoSampleBarRock <- function(data, xData, yData, fillParam, title, yLabel, posit
       geom_quasirandom(aes(shape = TreatmentFactored),size=4, fill="black", color="black", alpha=0.5) + 
       ggtitle(title) + ylab(yLabel) +  theme_bw() + scale_shape_manual(values=c(21:25)) + labs(col="Cohort",shape="Treatment") + 
       theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5), axis.title.x = element_blank(), 
-            plot.title = element_text(size=28,hjust = 0.5),axis.text.x=element_text(angle=45,vjust=1,hjust=1)) + annotation_custom(my_grob) 
+            plot.title = element_text(size=28,hjust = 0.5),axis.text.x=element_text(angle=45,vjust=1,hjust=1)) + annotation_custom(my_grob)  + 
+      theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
     )
 }
 
@@ -197,7 +198,7 @@ univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel, po
         scale_fill_manual(values=c("grey90")) + 
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
-        theme(legend.position = "none")     )
+        theme(legend.position = "none")   + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())  ) 
   }
   if (nonparam==T)
   {
@@ -217,7 +218,7 @@ univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel, po
         scale_fill_manual(values=c("grey90")) + 
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
-        annotation_custom(my_grob) + theme(legend.position = "none")     )  
+        annotation_custom(my_grob) + theme(legend.position = "none")  + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())    )  
   }
   if (nonparam == F)
   {
@@ -237,7 +238,7 @@ univScatter <- function(data, xData, yData, fillParam, title, xLabel, yLabel, po
         scale_fill_manual(values=c("grey90")) + 
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=28,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
-        annotation_custom(my_grob) + theme(legend.position = "none")     )
+        annotation_custom(my_grob) + theme(legend.position = "none")   + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())   )
   }
 }
 
@@ -256,7 +257,7 @@ bivScatter <- function(data1, data2, name1, name2, xData, yData, fillParam, titl
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=28,hjust = 0.5,color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
         #annotation_custom(my_grob1) + annotation_custom(my_grob2) + 
-        theme(legend.position = "none")     )
+        theme(legend.position = "none")     + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())  )
   }
   if (nonparam == F & statsOff == F )
   {  
@@ -283,7 +284,7 @@ bivScatter <- function(data1, data2, name1, name2, xData, yData, fillParam, titl
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=28,hjust = 0.5,color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
         annotation_custom(my_grob1) + annotation_custom(my_grob2) + 
-        theme(legend.position = "none")     )
+        theme(legend.position = "none")    + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())   )
   }
   if (nonparam == T & statsOff == F)
   {  
@@ -310,7 +311,7 @@ bivScatter <- function(data1, data2, name1, name2, xData, yData, fillParam, titl
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=28,hjust = 0.5,color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=32,hjust = 0.5)) + 
         annotation_custom(my_grob1) + annotation_custom(my_grob2) + 
-        theme(legend.position = "none")     )
+        theme(legend.position = "none")  + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())    )
   }
 
 }
@@ -318,9 +319,9 @@ bivScatter <- function(data1, data2, name1, name2, xData, yData, fillParam, titl
 
 prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, yLabel)
 {
-  targets <- which(table(data$Subject) > 0)         # change to >1 if you want to show only the repeated measures values
-  subsetData <- data[ which( data$Subject %in% names(targets)   ), ]
-  subsetData <- subsetData[order(subsetData$Subject, subsetData$TimePoint, decreasing = F),]
+  targets <- which(table(data$dbCode) > 0)         # change to >1 if you want to show only the repeated measures values
+  subsetData <- data[ which( data$dbCode %in% names(targets)   ), ]
+  subsetData <- subsetData[order(subsetData$dbCode, subsetData$TimePoint, decreasing = F),]
   return(
     ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
       geom_bar(stat = "summary", aes_string(fill=fillParam),color="black",size=0.1) + 
@@ -331,7 +332,7 @@ prePostTime <- function(data, xData, yData, fillParam, groupby, title, xLabel, y
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
       theme(axis.text = element_text(size=22,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
             legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white"), 
-            axis.title.x = element_blank(), axis.text.x = element_text(angle=45,hjust=1,vjust=1)) 
+            axis.title.x = element_blank(), axis.text.x = element_text(angle=45,hjust=1,vjust=1))  + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
   )
 }
 
@@ -364,7 +365,8 @@ prePostTimeAveraged <- function(data, title, xLabel, yLabel)
       scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + 
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
       theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=28,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
-            axis.text.x = element_text(angle = 45, hjust=1), legend.position = "none")  + annotation_custom(my_grob1) + annotation_custom(my_grob2)
+            axis.text.x = element_text(angle = 45, hjust=1), legend.position = "none")  + annotation_custom(my_grob1) + annotation_custom(my_grob2)  + 
+      theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
   )
 }
 
@@ -374,9 +376,9 @@ prePostTimeGene <- function(data, xData, yData, fillParam, groupby, title, xLabe
 {
   if( paired == T)
   {
-    targets <- which(table(data$Subject) > 1)    # strip down to just subjects with more than one value (e.g. paired measurements)
-    subsetData <- data[ which( data$Subject %in% names(targets)   ), ]
-    subsetData <- subsetData[order(subsetData$Subject, subsetData$TimeCategory, decreasing = F),]
+    targets <- which(table(data$dbCode) > 1)    # strip down to just subjects with more than one value (e.g. paired measurements)
+    subsetData <- data[ which( data$dbCode %in% names(targets)   ), ]
+    subsetData <- subsetData[order(subsetData$dbCode, subsetData$TimeCategory, decreasing = F),]
     return(
       ggplot(data=subsetData, aes_string(x=xData, y=yData) ) + theme_bw() + 
         geom_bar(stat = "summary", aes_string(fill=fillParam), color="black") + 
@@ -386,7 +388,8 @@ prePostTimeGene <- function(data, xData, yData, fillParam, groupby, title, xLabe
         scale_fill_manual(values=c("#FFB18C", "#7FAEDB")) + 
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
-              legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white")) 
+              legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white"))  + 
+        theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
     )
   }
   if( paired == F)   # use all data, not just the stripped down list
@@ -400,7 +403,8 @@ prePostTimeGene <- function(data, xData, yData, fillParam, groupby, title, xLabe
         scale_fill_manual(values=c("#FFB18C", "#7FAEDB")) + 
         ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
         theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
-              legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white")) 
+              legend.position = "none", strip.text = element_text(size = 24, color="black"), strip.background = element_rect(fill="white"))  + 
+        theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
     )
   }
 }
@@ -430,7 +434,7 @@ prePostTimeAveragedGene <- function(data, title, xLabel, yLabel)
       scale_fill_manual(values=c("#7FAEDB", "#FFB18C")) + 
       ggtitle(title) + ylab(yLabel) + xlab(xLabel)  +
       theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5), 
-            legend.position = "none")   + annotation_custom(my_grob1) + annotation_custom(my_grob2) 
+            legend.position = "none")   + annotation_custom(my_grob1) + annotation_custom(my_grob2)  + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
   )
 }
 
@@ -447,7 +451,7 @@ volcanoPlot <- function( diffExprData, repelThresh, title, leftLabel, rightLabel
     geom_text_repel(data=subset(data, padj< repelThresh), aes(label=row.names(subset(data, padj<repelThresh)))) + 
     ggtitle(title) + xlab("log2 fold change") + ylab("-log10 p-adj") + 
     theme(axis.text = element_text(size=18,hjust = 0.5), axis.title = element_text(size=22,hjust = 0.5), plot.title = element_text(size=28,hjust = 0.5)) +
-    annotation_custom(left_grob) + annotation_custom(right_grob)
+    annotation_custom(left_grob) + annotation_custom(right_grob) + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())
   )
 }
 
@@ -468,7 +472,8 @@ plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizeby
       theme(axis.title.x = element_text(size=16), axis.text = element_text(size=16, color="black"), title = element_text(size=16), legend.title = element_text(size=16),
             legend.text = element_text(size=16)) +
         scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
-      annotation_custom(left_grob) + annotation_custom(right_grob) 
+      annotation_custom(left_grob) + annotation_custom(right_grob)  + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank()) + 
+        geom_hline(yintercept = 0, size=0.5)
     )}
   if(sizebyFDR == T){
     return(
@@ -479,7 +484,8 @@ plotGSEAlollipop <- function( mergeResults, title, leftLabel, rightLabel, sizeby
         theme(axis.title.x = element_text(size=16), axis.text = element_text(size=16, color="black"), title = element_text(size=16), legend.title = element_text(size=16),
               legend.text = element_text(size=16)) + 
         scale_size( range=c(8,3),name = "False\nDiscovery\nRate") +  scale_y_continuous(minor_breaks = seq(-4,4,2)) + 
-        annotation_custom(left_grob) + annotation_custom(right_grob)
+        annotation_custom(left_grob) + annotation_custom(right_grob) + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())+ 
+        geom_hline(yintercept = 0, size=0.5)
     )}
 }
 
@@ -499,7 +505,8 @@ plotGSEAtraditional <- function (mergeResults, singlePathway, pathwayName, title
     ggtitle(title) + ylab("Enrichment score") + xlab("Rank in gene list") + 
     theme(axis.text = element_text(size=24,hjust = 0.5, color="black"), axis.title = element_text(size=24,hjust = 0.5, color="black"), plot.title = element_text(size=32,hjust = 0.5))+
     annotation_custom(main_grob) + geom_hline(yintercept = 0) + 
-      annotation_custom(left_grob) + annotation_custom(right_grob)
+      annotation_custom(left_grob) + annotation_custom(right_grob) + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())+ 
+      geom_hline(yintercept = 0, size=0.5)
   )
 
 }
@@ -517,7 +524,8 @@ plotIPAlollipop <- function( pathways, title, leftLabel, rightLabel)
       geom_bar( data = subset(pathways, `z.score` < 0), aes(x=NAME, y=z.score) , stat="Identity", width=0.01, color="#7FAEDB", size=1) +
       coord_flip() + theme_bw() + ggtitle(title) + ylab("z score") + xlab(NULL) + 
       theme(axis.title.x = element_text(size=18), axis.text = element_text(size=14), title = element_text(size=18)) + 
-      annotation_custom(left_grob) + annotation_custom(right_grob)
+      annotation_custom(left_grob) + annotation_custom(right_grob) + theme(panel.grid.minor = element_blank(), panel.grid.major=element_blank())+ 
+      geom_hline(yintercept = 0, size=0.5)
   )
 }
 
