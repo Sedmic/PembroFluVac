@@ -26,7 +26,8 @@ sessionInfo()
 ##' ## ----------- Save mergedData as RDS  --------------------
 
 mergedData <- readRDS("D:/Pembro-Fluvac/Analysis/mergedData/mergedData.RDS")
-
+demog <- readRDS("D:/Pembro-Fluvac/Analysis/mergedData/demog.RDS")
+serology <- readRDS("D:/Pembro-Fluvac/Analysis/mergedData/serology.RDS")
 
 ##' ## ----------- Cohort 2 description --------------------
 #'
@@ -186,7 +187,7 @@ prePostTime(data = BAAyear3long, xData = 'TimePoint', yData = 'ICOShiCD38hi_Freq
   scale_fill_manual(values = c("#EABD81", "#7B4D9A"))  + ylab(expression(paste(paste("ICO",S^'+', "CD3",8^'+' ), " (% cTfh)")))
 tukey_hsd( aov(data = BAAyear3long, formula = `ICOShiCD38hi_FreqParent` ~ `Cohort`:`TimePoint`))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/BAAyear3_FCtfh.pdf")
-# write.csv(BAAyear3long[,c("dbCode","TimePoint","ICOShiCD38hi_FreqParent")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e1m.csv")
+# write.csv(BAAyear3long[,c("dbCode","Cohort","TimePoint","ICOShiCD38hi_FreqParent")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e1m.csv")
 
 BAAyear3wide <- read.csv(file="D:/Pembro-Fluvac/Analysis/mergedData/BAAyear3wide.csv") 
 BAAyear3wide$Cohort <- factor(BAAyear3wide$Cohort, levels=c("Young","Elderly"))
@@ -392,7 +393,7 @@ temp <- rbind(subsetData1,subsetData2);
 # write.csv(x = temp[,c("dbCode", "Cohort","IgDlo_CD71hi_CD20loCD71hi...FreqParent","cTfh_ICOShiCD38hi_..FreqParent")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4q-2.csv")
 
 
-subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "baseline" & IgDlo_CD71hi_ActBCells...FreqParent > 0 & IgDlo_CD71hi_CD20loCD71hi...FreqParent >0)
+subsetData <- subset(mergedData, Cohort != "nonPD1" & TimeCategory == "PembroFluSpec_StatisticalModeling.Re" & IgDlo_CD71hi_ActBCells...FreqParent > 0 & IgDlo_CD71hi_CD20loCD71hi...FreqParent >0)
 twoSampleBar(data=subsetData, xData="Cohort", yData="IgDlo_CD71hi_ActBCells...FreqParent", fillParam="Cohort", title="baseline ABC", 
              yLabel="CD20+ ABC (% CD71+)") + scale_y_continuous(limits=c(0,100), breaks=seq(0,100,10))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/ABC_atBaseline_barPlot.pdf", width=4)
@@ -408,7 +409,7 @@ bivScatter(data1 = subsetData1, data2 = subsetData2, name1 = "HC", name2 = "anti
   coord_cartesian(xlim=c(0,11.2),ylim=c(0,3)) + xlab(expression(paste("ICO",S^"+","CD3",8^"+"," (% cTfh)")))
  # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/cTfh-d7_vs_ABC-71hi-20hi-d7_freqCD19_biv.pdf", device="pdf")
 temp <- rbind(subsetData1,subsetData2); 
-# write.csv(x = temp[,c("dbCode", "Cohort","IgDlo_CD71hi_CD20loCD71hi...FreqParent","cTfh_ICOShiCD38hi_..FreqParent")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4r-2.csv")
+# write.csv(x = temp[,c("dbCode", "Cohort","IgDlo_CD71hi_ActBCells...FreqParent","cTfh_ICOShiCD38hi_..FreqParent")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4r-2.csv")
 
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" & IgDlo_CD71hi_ActBCells...FreqParent != 0 )   # exclude zero values due to presumptive technical artifact
@@ -681,9 +682,9 @@ subsetData <- subset(mergedData, Cohort != "nonPD1" )
                yLabel = "FluB HAI titer", groupby = "dbCode") + scale_y_continuous(trans='log2', breaks=2^(1:13))
 grid.arrange(a,b,c,nrow=1)
   # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/HAItiter_overTime_3strains.pdf", arrangeGrob(a,b,c,nrow=1), width=14)
-# write.csv(a$data, file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e3a-1.csv")
-# write.csv(b$data, file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e3a-2.csv")
-# write.csv(c$data, file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e3a-3.csv")
+# write.csv(a$data[,c("dbCode","Cohort","TimeCategory","H1N1pdm09.HAI.titer")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e3a-1.csv")
+# write.csv(b$data[,c("dbCode","Cohort","TimeCategory","H3N2.HAI.titer")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e3a-2.csv")
+# write.csv(c$data[,c("dbCode","Cohort","TimeCategory","FluB.HAI.titer")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e3a-3.csv")
 
 
 ###' ## ------------ Correlations with HAI titer
@@ -847,19 +848,19 @@ prePostTime(subsetData, xData = "TimeCategory", yData = "IgG1_Total.Galactosylat
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG1", groupby = "dbCode") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) ) + 
   coord_cartesian(ylim = c(90,100))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG1_Tot-galactosylation_overTime_perSubject.pdf", width=6.5)
-# write.csv(subsetData[,c("dbCode","Cohort","TimeCategory","IgG1_Total.afucosylated")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4f-1.csv")
+# write.csv(subsetData[,c("dbCode","Cohort","TimeCategory","IgG1_Total.Galactosylation..G1.G2.")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4d-1.csv")
 
-prePostTime(subsetData, xData = "TimeCategory", yData = "IgG1_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG2 total galactosylation", 
+prePostTime(subsetData, xData = "TimeCategory", yData = "IgG2_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG2 total galactosylation", 
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG2", groupby = "dbCode") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) )+ 
   coord_cartesian(ylim = c(80,100))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG2_Tot-galactosylation_overTime_perSubject.pdf", width=6.5)
-# write.csv(subsetData[,c("dbCode","Cohort","TimeCategory","IgG1_Total.afucosylated")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4f-2.csv")
+# write.csv(subsetData[,c("dbCode","Cohort","TimeCategory","IgG2_Total.Galactosylation..G1.G2.")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4d-2.csv")
 
 prePostTime(subsetData, xData = "TimeCategory", yData = "IgG34_Total.Galactosylation..G1.G2.", fillParam = "Cohort", title = "IgG3/4 total galactosylation", 
             xLabel = "TimeCategory", yLabel = "% anti-H1 IgG3/4", groupby = "dbCode") + scale_y_continuous(breaks=seq(0,240,5), limits = c(0,100) )+ 
   coord_cartesian(ylim = c(50,100))
 # ggsave(filename = "D:/Pembro-Fluvac/Analysis/Images/IgG34_Tot-galactosylation_overTime_perSubject.pdf", width=6.5)
-# write.csv(subsetData[,c("dbCode","Cohort","TimeCategory","IgG1_Total.afucosylated")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4f-3.csv")
+# write.csv(subsetData[,c("dbCode","Cohort","TimeCategory","IgG34_Total.Galactosylation..G1.G2.")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e4d-3.csv")
 
 subsetData <- subset(mergedData, Cohort != "nonPD1"  & TimeCategory == "baseline")
 twoSampleBar(data=subsetData, xData="Cohort", yData="IgG1_Total.Galactosylation..G1.G2.", fillParam="Cohort", title="Total galactosylation\nbaseline", 
@@ -986,7 +987,7 @@ twoSampleBar(data=subsetData, xData="Cohort", yData="X1.Kd.HA", fillParam="Cohor
 
 
 subsetData <- subset(mergedData, Cohort != "nonPD1" )
-melted <- melt(subsetData, id.vars = c('Subject', 'TimeCategory', 'Cohort','Year'), measure.vars = c("Lo.Hi.HA.affinity"))
+melted <- melt(subsetData, id.vars = c('dbCode', 'TimeCategory', 'Cohort','Year'), measure.vars = c("Lo.Hi.HA.affinity"))
 prePostTimeAveraged(melted, title = "anti-HA Affinity", xLabel = NULL, yLabel = "Lo-Hi HA affinity") + scale_y_continuous(breaks=seq(0,99,0.03), limits = c(0.6,0.9))
  # ggsave (filename = "D:/Pembro-Fluvac/Analysis/Images/antiHA-affinity_overTime_LoHi.pdf", width=4.5, height=7)
 melted %>%  anova_test(value ~ TimeCategory+Cohort )                        # two-way anova without interaction term 

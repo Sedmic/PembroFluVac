@@ -120,7 +120,7 @@ HiHi_aPD1_v_HC_bL <- DESeqDataSetFromMatrix(countData=HiHi_aPD1_v_HC_bLdata, col
 HiHi_aPD1_v_HC_bL <- HiHi_aPD1_v_HC_bL[idx,]   # keep hard filter from above for consistency
 DESdata_HiHi_AvH_bL <- DESeq(HiHi_aPD1_v_HC_bL, parallel=TRUE)
 
-HiHi_AvH_bL <- as.data.frame(results(DESdata_HiHi_AvH_bL, contrast = c("condition", "aPD1_HiHi_cTfh_baseline", "Healthy_HiHi_cTfh_baseline") ))  # pos stats = first elem in comparison
+HiHi_AvH_bL <- as.data.frame(results(DESdata_HiHi_AvH_bL, contrast = c("condition", "anti-PD-1_HiHi_cTfh_baseline", "Healthy_HiHi_cTfh_baseline") ))  # pos stats = first elem in comparison
 # write.csv(HiHi_AvH_bL, file="D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/differentialExpression/HiHi_AvH_bL.csv")
 volcanoPlot(HiHi_AvH_bL, repelThresh = 0.10, title = "HiHi at baseline in aPD1 vs Healthy", leftLabel = "Healthy", rightLabel = "anti-PD-1" )
 HiHi_AvH_bL <- HiHi_AvH_bL[ order(HiHi_AvH_bL$stat, decreasing = F), ]; HiHi_AvH_bL <- HiHi_AvH_bL[ which(!is.na(HiHi_AvH_bL$stat)), ]

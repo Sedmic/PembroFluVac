@@ -193,6 +193,7 @@ rm(temp, mergedData.x, fullLabel, notlabeled,labeled,aPD1_sequence, HC_sequence)
 
 # saveRDS(mergedData, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergedData.RDS")
 # saveRDS(demog, file="D:/Pembro-Fluvac/Analysis/mergedData/demog.RDS")
+# saveRDS(serology, file="D:/Pembro-Fluvac/Analysis/mergedData/serology.RDS")
 # write.csv(mergedData, file = "D:/Pembro-Fluvac/Analysis/mergedData/mergedData.csv")
 
 

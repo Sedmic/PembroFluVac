@@ -93,6 +93,7 @@ ggplot(tsneMap, aes(x=V1, y=V2)) +
   theme(strip.background = element_blank(), plot.title=element_text(size=40)) + labs(fill = "Treatment", legend.key = element_blank()) +
   guides(colour=guide_legend(override.aes=list(size=8))) #+ xlim(-60,60) + ylim(-55,70)
 # ggsave(filename = "D:/Pembro-Fluvac/18-19season/RNAseq/Analysis/Images/tsne_AllSamples_colorBySubset.pdf", width=8)
+# write.csv(tsneMap[,c("subgroup", "TimeCategory","V1","V2")], file="D:/Pembro-Fluvac/Analysis/sourceDataExports/e5a.csv" )
 
 ggplot(tsneMap, aes(x=V1, y=V2)) + 
   geom_point(size=10,pch=21,colour="black", aes(fill=TimeCategory)) +                                      # color by TimeCategory
